@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
 import { getCurrentUserId } from '@/adapters/auth/session';
 import { captureComponent } from '@/app-core/captureComponent';
 import { saveComponent, listComponents } from '@/adapters/supabase/vaultRepository';
@@ -10,8 +11,15 @@ export async function GET() {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const components = await listComponents(userId);
-  return NextResponse.json({ components });
+  try {
+    const components = await listComponents(userId);
+    return NextResponse.json({ components });
+  } catch (e) {
+    return NextResponse.json(
+      { error: 'list_failed', detail: (e as Error).message },
+      { status: 500 },
+    );
+  }
 }
 
 // POST /api/components — capture a pasted snippet.
@@ -31,10 +39,17 @@ export async function POST(request: Request) {
   }
 
   const component = captureComponent(body.source, {
-    id: () => crypto.randomUUID(),
+    id: () => randomUUID(),
     now: () => new Date().toISOString(),
   });
 
-  const saved = await saveComponent(component, userId);
-  return NextResponse.json({ component: saved }, { status: 201 });
+  try {
+    const saved = await saveComponent(component, userId);
+    return NextResponse.json({ component: saved }, { status: 201 });
+  } catch (e) {
+    return NextResponse.json(
+      { error: 'save_failed', detail: (e as Error).message },
+      { status: 500 },
+    );
+  }
 }

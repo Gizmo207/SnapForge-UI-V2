@@ -4,10 +4,12 @@ import { useState } from 'react';
 
 export function PasteModal({
   busy,
+  error,
   onClose,
   onSubmit,
 }: {
   busy: boolean;
+  error?: string | null;
   onClose: () => void;
   onSubmit: (source: string) => void;
 }) {
@@ -34,6 +36,21 @@ export function PasteModal({
             It’s parsed, classified, and security-checked before anything runs. Code only
             previews inside a sandbox once it passes the gate.
           </p>
+          {error && (
+            <p
+              style={{
+                margin: '12px 2px 0',
+                color: 'var(--bad)',
+                fontSize: 13,
+                background: 'rgba(251,113,133,.08)',
+                border: '1px solid rgba(251,113,133,.3)',
+                borderRadius: 10,
+                padding: '10px 12px',
+              }}
+            >
+              ⚠ {error}
+            </p>
+          )}
         </div>
         <div className="modal-foot">
           <button className="btn btn-ghost" onClick={onClose}>

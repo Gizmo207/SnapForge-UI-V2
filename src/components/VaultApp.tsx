@@ -12,6 +12,7 @@ export function VaultApp({ initial, userId }: { initial: Component[]; userId: st
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -26,17 +27,22 @@ export function VaultApp({ initial, userId }: { initial: Component[]; userId: st
 
   async function addSnippet(source: string) {
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch('/api/components', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ source }),
       });
+      const body = await res.json().catch(() => ({}));
       if (res.ok) {
-        const { component } = await res.json();
-        setComponents((prev) => [component, ...prev]);
+        setComponents((prev) => [body.component, ...prev]);
         setModalOpen(false);
+      } else {
+        setError(body.detail || body.error || `Request failed (${res.status})`);
       }
+    } catch (e) {
+      setError((e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -144,7 +150,15 @@ export function VaultApp({ initial, userId }: { initial: Component[]; userId: st
       </main>
 
       {modalOpen && (
-        <PasteModal busy={busy} onClose={() => setModalOpen(false)} onSubmit={addSnippet} />
+        <PasteModal
+          busy={busy}
+          error={error}
+          onClose={() => {
+            setModalOpen(false);
+            setError(null);
+          }}
+          onSubmit={addSnippet}
+        />
       )}
     </>
   );
