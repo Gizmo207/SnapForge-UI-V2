@@ -37,6 +37,20 @@ DOMPurify · TypeScript/SWC.
 
 ## Status
 
-Documentation suite complete (see
-[`checkpoints/CP-3_protocol_docs.md`](./checkpoints/CP-3_protocol_docs.md)). The
-build (CP-4) has not started.
+CP-4 (the build) in progress. The protocol-critical core — the pure ingestion
+pipeline and the sanitization gate — is implemented **test-first** and verified
+(54 tests pass, clean typecheck, successful `next build`). The Next.js app shell,
+route handlers, and adapters (Supabase, Auth.js, Sandpack, JSZip) are scaffolded
+and compiling; running the full loop needs live env config. See
+[`checkpoints/CP-4_build.md`](./checkpoints/CP-4_build.md).
+
+## Develop
+
+```bash
+npm install
+npm test          # pure-domain suite (ingestion, sanitization gate, export, auth)
+npm run typecheck
+npm run build
+cp .env.example .env.local   # then fill in Supabase + Auth.js + OWNER_ID
+npm run dev
+```
