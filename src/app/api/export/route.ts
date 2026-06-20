@@ -1,4 +1,4 @@
-import { requireOwner } from '@/adapters/auth/session';
+import { getCurrentUserId } from '@/adapters/auth/session';
 import { getComponentsByIds } from '@/adapters/supabase/vaultRepository';
 import { buildExportBundle } from '@/domains/export/pure/buildExportBundle';
 import { bundleToZip } from '@/adapters/export/zipAdapter';
@@ -7,8 +7,8 @@ export const runtime = 'nodejs';
 
 // POST /api/export — multi-select export to a zip bundle.
 export async function POST(request: Request) {
-  const ownerId = await requireOwner();
-  if (!ownerId) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
     return Response.json({ error: 'unauthenticated' }, { status: 401 });
   }
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'ids is required' }, { status: 400 });
   }
 
-  const components = await getComponentsByIds(ids, ownerId);
+  const components = await getComponentsByIds(ids, userId);
   // The pure builder enforces the sanitization gate; only allowed components
   // contribute files.
   const bundle = buildExportBundle(components);

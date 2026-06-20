@@ -1,45 +1,33 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from './authOptions';
 import {
-  ownerAuthDecision,
+  decideViewerIdentity,
   type SessionEvidenceStatus,
-} from '../../domains/identity-access/pure/ownerAuthDecision';
+} from '../../domains/identity-access/pure/viewerIdentity';
 
-type SessionShape = { sessionStatus: SessionEvidenceStatus; sessionOwnerId: string | null };
+type SessionShape = { sessionStatus: SessionEvidenceStatus; sessionUserId: string | null };
 
 async function readSession(): Promise<SessionShape> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) return { sessionStatus: 'missing', sessionOwnerId: null };
+    if (!session) return { sessionStatus: 'missing', sessionUserId: null };
     return {
       sessionStatus: 'present',
-      sessionOwnerId: (session as { ownerId?: string }).ownerId ?? null,
+      sessionUserId: (session as { ownerId?: string }).ownerId ?? null,
     };
   } catch {
-    return { sessionStatus: 'invalid', sessionOwnerId: null };
+    return { sessionStatus: 'invalid', sessionUserId: null };
   }
 }
 
 /**
- * Resolves the verified server-side session and applies the pure owner-auth
- * decision. Returns the ownerId only when the caller IS the vault owner;
- * otherwise null (default-deny). Identity is never read from headers or params.
+ * Multi-user: returns the signed-in user's id (their own vault key) or null when
+ * not authenticated. Every authenticated user owns their own vault; data is
+ * scoped by this id so users never see each other's components. Identity is
+ * never read from headers or params.
  */
-export async function requireOwner(): Promise<string | null> {
-  const configuredOwner = process.env.OWNER_ID;
-  if (!configuredOwner) return null; // vault not bound -> deny
-
-  const { sessionStatus, sessionOwnerId } = await readSession();
-  const outcome = ownerAuthDecision({ sessionStatus, sessionOwnerId, ownerId: configuredOwner });
-  return outcome === 'owner' ? configuredOwner : null;
-}
-
-/**
- * For the owner-claim bootstrap screen: returns the signed-in identity even when
- * it is not (yet) the configured owner, so the operator can copy it into
- * OWNER_ID. Returns null when there is no valid session.
- */
-export async function getSignedInOwnerId(): Promise<string | null> {
-  const { sessionStatus, sessionOwnerId } = await readSession();
-  return sessionStatus === 'present' ? sessionOwnerId : null;
+export async function getCurrentUserId(): Promise<string | null> {
+  const { sessionStatus, sessionUserId } = await readSession();
+  const identity = decideViewerIdentity({ sessionStatus, sessionUserId });
+  return identity.status === 'identified' ? identity.userId : null;
 }

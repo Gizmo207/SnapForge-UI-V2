@@ -1,23 +1,23 @@
 import { NextResponse } from 'next/server';
-import { requireOwner } from '@/adapters/auth/session';
+import { getCurrentUserId } from '@/adapters/auth/session';
 import { captureComponent } from '@/app-core/captureComponent';
 import { saveComponent, listComponents } from '@/adapters/supabase/vaultRepository';
 
 export const runtime = 'nodejs';
 
-// GET /api/components — list the owner's vault.
+// GET /api/components — list the signed-in user's vault.
 export async function GET() {
-  const ownerId = await requireOwner();
-  if (!ownerId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  const components = await listComponents(ownerId);
+  const components = await listComponents(userId);
   return NextResponse.json({ components });
 }
 
 // POST /api/components — capture a pasted snippet.
 export async function POST(request: Request) {
-  const ownerId = await requireOwner();
-  if (!ownerId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   let body: { source?: unknown };
   try {
@@ -35,6 +35,6 @@ export async function POST(request: Request) {
     now: () => new Date().toISOString(),
   });
 
-  const saved = await saveComponent(component, ownerId);
+  const saved = await saveComponent(component, userId);
   return NextResponse.json({ component: saved }, { status: 201 });
 }
