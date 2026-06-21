@@ -76,17 +76,24 @@ const fitEl = document.createElement('div');
 fitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box';
 document.getElementById('root').appendChild(fitEl);
 createRoot(fitEl).render(React.createElement(App));
-var ro = null;
 function fit(){
   var child = fitEl.firstElementChild;
   if(!child) return;
-  if(!ro){ try { ro = new ResizeObserver(fit); ro.observe(child); } catch(e){} }
   child.style.transform = 'none';
-  child.style.transformOrigin = 'center center';
+  child.style.width = '';
+  child.style.height = '';
   var r = child.getBoundingClientRect();
-  if(!r.width || !r.height) return;
+  // A percentage-sized component (root is width/height:100%) collapses to ~0
+  // because the wrapper isn't stretched — let it fill the tile instead.
+  if(r.width < 8 || r.height < 8){
+    child.style.width = '100%';
+    child.style.height = '100%';
+    return;
+  }
+  // Otherwise it's a natural-size component: scale down only if it overflows.
   var aw = window.innerWidth - 24, ah = window.innerHeight - 24;
   var scale = Math.min(1, aw / r.width, ah / r.height);
+  child.style.transformOrigin = 'center center';
   child.style.transform = 'scale(' + scale + ')';
 }
 window.addEventListener('resize', fit);
