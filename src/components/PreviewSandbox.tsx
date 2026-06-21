@@ -66,24 +66,29 @@ import App from './App';
 ${twInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
   html{background:${sc.bg};color:${sc.fg}}
-  body{margin:0;min-height:100vh;display:grid;place-items:center;overflow:hidden}
+  body{margin:0;width:100vw;height:100vh;overflow:hidden}
   #root{display:contents}\`;
 document.head.appendChild(s);
+// A definite, full-tile flex box so percentage-sized components (e.g. a loader
+// whose root is width/height:100%) have a real box to fill instead of
+// collapsing to zero. We then scale the rendered child down if it overflows.
 const fitEl = document.createElement('div');
-fitEl.id = 'fit';
-fitEl.style.transformOrigin = 'center center';
+fitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box';
 document.getElementById('root').appendChild(fitEl);
 createRoot(fitEl).render(React.createElement(App));
-// Auto-fit: scale the rendered component down so it never overflows the tile.
+var ro = null;
 function fit(){
-  fitEl.style.transform = 'none';
-  const r = fitEl.getBoundingClientRect();
+  var child = fitEl.firstElementChild;
+  if(!child) return;
+  if(!ro){ try { ro = new ResizeObserver(fit); ro.observe(child); } catch(e){} }
+  child.style.transform = 'none';
+  child.style.transformOrigin = 'center center';
+  var r = child.getBoundingClientRect();
   if(!r.width || !r.height) return;
-  const aw = window.innerWidth - 28, ah = window.innerHeight - 28;
-  const scale = Math.min(1, aw / r.width, ah / r.height);
-  fitEl.style.transform = 'scale(' + scale + ')';
+  var aw = window.innerWidth - 24, ah = window.innerHeight - 24;
+  var scale = Math.min(1, aw / r.width, ah / r.height);
+  child.style.transform = 'scale(' + scale + ')';
 }
-try { new ResizeObserver(fit).observe(fitEl); } catch(e){}
 window.addEventListener('resize', fit);
 [0,80,250,600,1200].forEach(function(t){ setTimeout(fit, t); });`;
 
