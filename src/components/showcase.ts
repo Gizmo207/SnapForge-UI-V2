@@ -4,7 +4,7 @@ export type Showcase = { theme: 'light' | 'dark'; bg: string; fg: string };
 
 // Backgrounds sit a step *off* the near-black page so the card visibly floats,
 // the way uiverse's cards do (dark ≈ a lifted charcoal, light ≈ soft grey).
-const DARK: Showcase = { theme: 'dark', bg: '#1b1c24', fg: '#f3f3f7' };
+const DARK: Showcase = { theme: 'dark', bg: '#232427', fg: '#f3f3f7' };
 const LIGHT: Showcase = { theme: 'light', bg: '#ececf1', fg: '#0f172a' };
 
 const DARK_TAGS = /(dark|neon|glow|cyber|matrix|terminal|night|midnight|space|galaxy|black)/;
@@ -15,8 +15,8 @@ const DARK_TAGS = /(dark|neon|glow|cyber|matrix|terminal|night|midnight|space|ga
  */
 export function showcaseHeight(c: Component): number {
   const k = `${c.category} ${c.subcategory}`.toLowerCase();
-  if (/card/.test(k)) return 360;
-  if (/form/.test(k)) return 330;
+  if (/card/.test(k)) return 400;
+  if (/form/.test(k)) return 360;
   if (/(button|checkbox|toggle|switch|radio|loader|spinner|tooltip|input)/.test(k)) return 196;
   return 224;
 }

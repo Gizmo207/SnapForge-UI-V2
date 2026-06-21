@@ -42,18 +42,19 @@ export function PreviewSandbox({ component }: { component: Component }) {
   }
 
   const dependencies = Object.fromEntries(component.dependencies.map((d) => [d, 'latest']));
+  // Background goes on <body> (the canvas), NOT a wrapping div — otherwise a
+  // component's negative-z-index layers (glow borders, blurred shadows) render
+  // behind an intermediate background and disappear.
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 const s = document.createElement('style');
-s.textContent = \`${NO_SCROLL} #root{height:100%}\`;
+s.textContent = \`${NO_SCROLL}
+  html,body{background:${sc.bg};color:${sc.fg}}
+  body{display:grid;place-items:center;padding:16px}
+  #root{display:contents}\`;
 document.head.appendChild(s);
-createRoot(document.getElementById('root')!).render(
-  React.createElement('div',
-    { style: { height: '100%', width: '100%', display: 'grid', placeItems: 'center', padding: 16, background: '${sc.bg}', color: '${sc.fg}' } },
-    React.createElement(App)
-  )
-);`;
+createRoot(document.getElementById('root')!).render(React.createElement(App));`;
 
   return (
     <SandpackProvider
