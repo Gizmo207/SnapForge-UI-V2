@@ -39,7 +39,8 @@ const rules: Rule[] = [
   // <input type="checkbox">, so these must outrank the checkbox-input rule
   // (priority 11) — otherwise every toggle is mislabeled as a checkbox.
   { pattern: /toggle|\bslider\b/i, category: 'primitives', subcategory: 'toggles', tag: 'toggle', priority: 14 },
-  { pattern: /switch/i, category: 'primitives', subcategory: 'toggles', tag: 'toggle', priority: 13 },
+  // "switch" the UI word, but NOT a JS `switch (` statement.
+  { pattern: /\bswitch\b(?!\s*\()/i, category: 'primitives', subcategory: 'toggles', tag: 'toggle', priority: 13 },
 
   // Radios
   { pattern: /input.*type=["']radio["']/i, category: 'primitives', subcategory: 'radio-buttons', tag: 'radio', priority: 11 },
@@ -119,6 +120,8 @@ const rules: Rule[] = [
   { pattern: /aurora/i, category: 'patterns', subcategory: 'backgrounds', tag: 'aurora', priority: 7 },
   { pattern: /pattern/i, category: 'patterns', subcategory: 'backgrounds', tag: 'pattern', priority: 6 },
   { pattern: /background/i, category: 'patterns', subcategory: 'backgrounds', tag: 'background', priority: 5 },
+  // Canvas / WebGL / cursor effects (e.g. a fluid splash cursor).
+  { pattern: /<canvas|\.getContext\(|webgl|requestAnimationFrame|cursor/i, category: 'patterns', subcategory: 'backgrounds', tag: 'canvas', priority: 4 },
 
   // Layout
   { pattern: /display:\s*grid/i, category: 'layouts', subcategory: 'grids', tag: 'grid', priority: 3 },
