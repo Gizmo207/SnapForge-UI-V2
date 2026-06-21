@@ -6,6 +6,27 @@ import type { Component } from '@/domains/shared/component';
 import type { ViewerProfile } from '@/adapters/auth/session';
 import { ComponentCard } from './ComponentCard';
 import { PasteModal } from './PasteModal';
+import { Sidebar, type Cat } from './Sidebar';
+
+const CAT_ORDER = [
+  'buttons', 'checkboxes', 'toggles', 'radio-buttons', 'inputs', 'forms',
+  'cards', 'loaders', 'badges', 'tooltips', 'modals', 'dropdowns',
+  'accordions', 'tabs', 'navbars', 'sidebars', 'heroes', 'headers',
+  'footers', 'backgrounds', 'grids', 'misc',
+];
+
+const CAT_LABELS: Record<string, string> = {
+  toggles: 'Toggle switches',
+  'radio-buttons': 'Radio buttons',
+  misc: 'Other',
+};
+
+function catLabel(slug: string): string {
+  return (
+    CAT_LABELS[slug] ??
+    slug.replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())
+  );
+}
 
 export function VaultApp({
   initial,
@@ -18,22 +39,38 @@ export function VaultApp({
 }) {
   const [components, setComponents] = useState<Component[]>(initial);
   const [query, setQuery] = useState('');
+  const [activeCat, setActiveCat] = useState('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Categories (by subcategory) with counts, ordered canonically — the sidebar
+  // groups the vault so cards and toggles aren't jumbled on one page.
+  const cats = useMemo<Cat[]>(() => {
+    const counts = new Map<string, number>();
+    for (const c of components) counts.set(c.subcategory, (counts.get(c.subcategory) ?? 0) + 1);
+    return Array.from(counts.entries())
+      .map(([slug, count]) => ({ slug, label: catLabel(slug), count }))
+      .sort((a, b) => {
+        const ia = CAT_ORDER.indexOf(a.slug);
+        const ib = CAT_ORDER.indexOf(b.slug);
+        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib) || a.label.localeCompare(b.label);
+      });
+  }, [components]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return components;
-    return components.filter((c) =>
-      [c.name, c.framework, c.category, c.subcategory, ...c.tags]
+    return components.filter((c) => {
+      if (activeCat !== 'all' && c.subcategory !== activeCat) return false;
+      if (!q) return true;
+      return [c.name, c.framework, c.category, c.subcategory, ...c.tags]
         .join(' ')
         .toLowerCase()
-        .includes(q),
-    );
-  }, [components, query]);
+        .includes(q);
+    });
+  }, [components, query, activeCat]);
 
   async function addSnippet(source: string) {
     setBusy(true);
@@ -166,46 +203,52 @@ export function VaultApp({
         </div>
       </header>
 
-      <main className="app-main">
-        <div className="section-head">
-          <h2>Your vault</h2>
-          <span className="count">
-            {filtered.length} component{filtered.length === 1 ? '' : 's'}
-            {query && ` · filtered`}
-          </span>
-        </div>
+      <div className="layout">
+        <Sidebar cats={cats} total={components.length} active={activeCat} onSelect={setActiveCat} />
 
-        {filtered.length > 0 ? (
-          <div className="grid">
-            {filtered.map((c) => (
-              <ComponentCard
-                key={c.componentId}
-                component={c}
-                selected={selected.has(c.componentId)}
-                onToggle={() => toggle(c.componentId)}
-                onSetTheme={(theme) => setTheme(c.componentId, theme)}
-              />
-            ))}
+        <main className="app-main">
+          <div className="section-head">
+            <h2>{activeCat === 'all' ? 'Your vault' : catLabel(activeCat)}</h2>
+            <span className="count">
+              {filtered.length} component{filtered.length === 1 ? '' : 's'}
+              {query && ` · filtered`}
+            </span>
           </div>
-        ) : (
-          <div className="empty">
-            <div className="empty-mark" style={{ fontSize: 26 }}>
-              📦
+
+          {filtered.length > 0 ? (
+            <div className="grid">
+              {filtered.map((c) => (
+                <ComponentCard
+                  key={c.componentId}
+                  component={c}
+                  selected={selected.has(c.componentId)}
+                  onToggle={() => toggle(c.componentId)}
+                  onSetTheme={(theme) => setTheme(c.componentId, theme)}
+                />
+              ))}
             </div>
-            <h3>{components.length === 0 ? 'Your vault is empty' : 'No matches'}</h3>
-            <p>
-              {components.length === 0
-                ? 'Paste your first React or HTML component — it’ll be classified, sandboxed, and saved here.'
-                : 'Try a different search term.'}
-            </p>
-            {components.length === 0 && (
-              <button className="btn btn-primary btn-lg" onClick={() => setModalOpen(true)}>
-                ＋ Paste your first snippet
-              </button>
-            )}
-          </div>
-        )}
-      </main>
+          ) : (
+            <div className="empty">
+              <div className="empty-mark" style={{ fontSize: 26 }}>
+                📦
+              </div>
+              <h3>{components.length === 0 ? 'Your vault is empty' : 'No matches'}</h3>
+              <p>
+                {components.length === 0
+                  ? 'Paste your first React or HTML component — it’ll be classified, sandboxed, and saved here.'
+                  : activeCat !== 'all'
+                    ? 'No components in this category yet.'
+                    : 'Try a different search term.'}
+              </p>
+              {components.length === 0 && (
+                <button className="btn btn-primary btn-lg" onClick={() => setModalOpen(true)}>
+                  ＋ Add your first component
+                </button>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
 
       {modalOpen && (
         <PasteModal
