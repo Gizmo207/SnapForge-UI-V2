@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from '@/adapters/supabase/client';
+import { captureComponent } from '@/app-core/captureComponent';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +13,21 @@ export const runtime = 'nodejs';
  */
 export async function GET() {
   const out: Record<string, unknown> = { ok: false };
+
+  // Exercise the sanitization path (dompurify for HTML, typescript for JSX) —
+  // this is what was crashing with `require() of ES Module` on Vercel.
+  const deps = { id: () => 'selftest', now: () => '2026-01-01T00:00:00Z' };
+  try {
+    const html = captureComponent('<button class="btn">x</button>', deps);
+    const react = captureComponent('export default function B(){ return <button>x</button>; }', deps);
+    out.captureSelfTest = {
+      ok: true,
+      html: html.sanitizationOutcome,
+      react: react.sanitizationOutcome,
+    };
+  } catch (e) {
+    out.captureSelfTest = { ok: false, error: (e as Error).message };
+  }
 
   let supabase;
   try {

@@ -38,17 +38,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'source is required' }, { status: 400 });
   }
 
-  const component = captureComponent(body.source, {
-    id: () => randomUUID(),
-    now: () => new Date().toISOString(),
-  });
-
   try {
+    const component = captureComponent(body.source, {
+      id: () => randomUUID(),
+      now: () => new Date().toISOString(),
+    });
     const saved = await saveComponent(component, userId);
     return NextResponse.json({ component: saved }, { status: 201 });
   } catch (e) {
     return NextResponse.json(
-      { error: 'save_failed', detail: (e as Error).message },
+      { error: 'capture_failed', detail: (e as Error).message },
       { status: 500 },
     );
   }
