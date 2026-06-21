@@ -21,7 +21,7 @@ export function ComponentCard({
   return (
     <article className={`card${selected ? ' selected' : ''}`}>
       <div
-        className="card-stage"
+        className="showcase"
         style={{ background: sc.bg }}
         onMouseEnter={() => allowed && setLive(true)}
       >
@@ -30,12 +30,7 @@ export function ComponentCard({
         ) : live ? (
           <PreviewSandbox component={component} />
         ) : (
-          <button
-            className="stage-poster"
-            style={{ color: sc.theme === 'dark' ? '#9aa0b5' : '#7a8194' }}
-            onClick={() => setLive(true)}
-            aria-label="Preview"
-          >
+          <button className="stage-poster" onClick={() => setLive(true)} aria-label="Preview">
             <span className="play">▶</span>
           </button>
         )}
@@ -51,11 +46,13 @@ export function ComponentCard({
         </button>
       </div>
 
-      <div className="card-foot">
+      <div className="card-meta">
         <span className="name" title={component.name}>
           {component.name}
         </span>
-        <span className="fw-tag">{component.framework}</span>
+        <span className="meta">
+          {component.framework} · {component.subcategory}
+        </span>
       </div>
     </article>
   );

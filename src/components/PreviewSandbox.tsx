@@ -12,8 +12,11 @@ import { pickShowcase } from './showcase';
  *  - HTML  -> a fully locked <iframe sandbox=""> (no script execution).
  *  - React -> Sandpack's sandboxed bundler. Detected dependencies are declared
  *             so packages like styled-components resolve from the CDN. The
- *             component is centered on a showcase background.
+ *             component is centered on a showcase background, no scrollbars.
  */
+const NO_SCROLL = `html,body{margin:0;height:100%;overflow:hidden}*{box-sizing:border-box}
+  ::-webkit-scrollbar{width:0;height:0;display:none}`;
+
 export function PreviewSandbox({ component }: { component: Component }) {
   if (component.sanitizationOutcome !== 'allowed' || !component.sanitizedArtifact) {
     return null;
@@ -24,8 +27,8 @@ export function PreviewSandbox({ component }: { component: Component }) {
 
   if (component.framework === 'html') {
     const srcDoc = `<!doctype html><html><head><meta charset="utf-8"/><style>
-      html,body{height:100%;margin:0}
-      body{display:grid;place-items:center;padding:18px;background:${sc.bg};color:${sc.fg};
+      ${NO_SCROLL}
+      body{display:grid;place-items:center;padding:22px;background:${sc.bg};color:${sc.fg};
         font-family:Inter,system-ui,-apple-system,sans-serif}
     </style></head><body>${artifact}</body></html>`;
     return (
@@ -42,9 +45,12 @@ export function PreviewSandbox({ component }: { component: Component }) {
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+const s = document.createElement('style');
+s.textContent = \`${NO_SCROLL} #root{height:100%}\`;
+document.head.appendChild(s);
 createRoot(document.getElementById('root')!).render(
   React.createElement('div',
-    { style: { minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 18, background: '${sc.bg}', color: '${sc.fg}' } },
+    { style: { height: '100%', width: '100%', display: 'grid', placeItems: 'center', padding: 22, background: '${sc.bg}', color: '${sc.fg}' } },
     React.createElement(App)
   )
 );`;
