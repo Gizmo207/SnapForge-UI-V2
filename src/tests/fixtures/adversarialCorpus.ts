@@ -27,15 +27,22 @@ export const sanitizationCorpus: SanitizationFixture[] = [
   { id: 'html-benign-window-text', framework: 'html', source: `<p>Open the window for fresh air. document your day.</p>`, expected: 'allowed' },
   { id: 'html-empty', framework: 'html', source: `   `, expected: 'blocked' },
 
-  // --- React/JSX: hostile -> blocked ---
-  { id: 'jsx-window-access', framework: 'react', source: `export default function C(){ const w = window.location.href; return <div>{w}</div>; }`, expected: 'blocked' },
-  { id: 'jsx-document-cookie', framework: 'react', source: `export default function C(){ return <div>{document.cookie}</div>; }`, expected: 'blocked' },
+  // --- React/JSX: hostile -> blocked (capabilities, however reached) ---
   { id: 'jsx-eval', framework: 'react', source: `export default function C(){ eval('alert(1)'); return <div/>; }`, expected: 'blocked' },
+  { id: 'jsx-fetch', framework: 'react', source: `export default function C(){ fetch('https://evil.test'); return <div/>; }`, expected: 'blocked' },
+  { id: 'jsx-window-fetch', framework: 'react', source: `export default function C(){ window.fetch('https://evil.test'); return <div/>; }`, expected: 'blocked' },
+  { id: 'jsx-document-cookie', framework: 'react', source: `export default function C(){ return <div>{document.cookie}</div>; }`, expected: 'blocked' },
+  { id: 'jsx-window-localstorage', framework: 'react', source: `export default function C(){ window.localStorage.setItem('a','b'); return <div/>; }`, expected: 'blocked' },
+  { id: 'jsx-bracket-fetch', framework: 'react', source: `export default function C(){ window['fetch']('x'); return <div/>; }`, expected: 'blocked' },
   { id: 'jsx-dangerously-set', framework: 'react', source: `export default function C(){ return <div dangerouslySetInnerHTML={{ __html: '<b>x</b>' }} />; }`, expected: 'blocked' },
   { id: 'jsx-script-element', framework: 'react', source: `export default function C(){ return <div><script>{'a'}</script></div>; }`, expected: 'blocked' },
 
   // --- React/JSX: safe -> allowed ---
   { id: 'jsx-clean-button', framework: 'react', source: `import React from 'react';\nexport default function B(){ return <button className="btn">Go</button>; }`, expected: 'allowed' },
+  // Benign host access is allowed now (the preview is sandboxed): a canvas/cursor
+  // effect using window event listeners + requestAnimationFrame.
+  { id: 'jsx-window-events', framework: 'react', source: `import React from 'react';\nexport default function B(){ window.addEventListener('mousemove', () => {}); requestAnimationFrame(() => {}); return <canvas />; }`, expected: 'allowed' },
+  { id: 'jsx-window-location-read', framework: 'react', source: `export default function C(){ const w = window.location.href; return <div>{w}</div>; }`, expected: 'allowed' },
   // `windowSize` is a different identifier than `window`; an AST check allows it where a substring scan would not.
   { id: 'jsx-benign-window-like-name', framework: 'react', source: `import React from 'react';\nexport default function B(){ const windowSize = 10; return <div>{windowSize}</div>; }`, expected: 'allowed' },
 
