@@ -31,3 +31,16 @@ export async function getCurrentUserId(): Promise<string | null> {
   const identity = decideViewerIdentity({ sessionStatus, sessionUserId });
   return identity.status === 'identified' ? identity.userId : null;
 }
+
+export type ViewerProfile = { name: string | null; email: string | null; image: string | null };
+
+/** Display-only profile for the header (name/email/avatar). Never an authority. */
+export async function getViewerProfile(): Promise<ViewerProfile> {
+  try {
+    const session = await getServerSession(authOptions);
+    const u = (session as { user?: { name?: string; email?: string; image?: string } } | null)?.user;
+    return { name: u?.name ?? null, email: u?.email ?? null, image: u?.image ?? null };
+  } catch {
+    return { name: null, email: null, image: null };
+  }
+}

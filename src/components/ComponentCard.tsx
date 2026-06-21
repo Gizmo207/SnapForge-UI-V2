@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { Component } from '@/domains/shared/component';
 import { PreviewSandbox } from './PreviewSandbox';
-import { pickShowcase } from './showcase';
+import { pickShowcase, showcaseHeight } from './showcase';
 
 export function ComponentCard({
   component,
@@ -24,7 +24,7 @@ export function ComponentCard({
     <article className={`card${selected ? ' selected' : ''}`}>
       <div
         className="showcase"
-        style={{ background: sc.bg }}
+        style={{ background: sc.bg, height: showcaseHeight(component) }}
         onMouseEnter={() => allowed && setLive(true)}
       >
         {!allowed ? (

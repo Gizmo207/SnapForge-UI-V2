@@ -9,6 +9,18 @@ const LIGHT: Showcase = { theme: 'light', bg: '#ececf1', fg: '#0f172a' };
 
 const DARK_TAGS = /(dark|neon|glow|cyber|matrix|terminal|night|midnight|space|galaxy|black)/;
 
+/**
+ * Showcase height by component kind — like uiverse, where the Cards section uses
+ * much taller tiles than Checkboxes/Toggles so the whole component is visible.
+ */
+export function showcaseHeight(c: Component): number {
+  const k = `${c.category} ${c.subcategory}`.toLowerCase();
+  if (/card/.test(k)) return 360;
+  if (/form/.test(k)) return 330;
+  if (/(button|checkbox|toggle|switch|radio|loader|spinner|tooltip|input)/.test(k)) return 196;
+  return 224;
+}
+
 /** Relative luminance (0 = black, 1 = white) of the first color found, or null. */
 function luminance(value: string): number | null {
   let r: number, g: number, b: number;

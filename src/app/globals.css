@@ -100,8 +100,29 @@ a { color: inherit; text-decoration: none; }
 .search input { flex: 1; background: none; border: none; outline: none; color: var(--text); font: inherit; font-size: 14px; }
 .search input::placeholder { color: var(--text-faint); }
 .topbar-spacer { flex: 1; }
-.userchip { display: flex; align-items: center; gap: 9px; color: var(--text-dim); font-size: 13px; }
-.avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--grad); display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 12px; }
+
+/* Account menu */
+.usermenu { position: relative; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--grad);
+  display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px;
+  border: 0; cursor: pointer; padding: 0; overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.menu-scrim { position: fixed; inset: 0; z-index: 40; }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 41; min-width: 200px;
+  background: var(--surface); border: 1px solid var(--border-2); border-radius: 12px;
+  box-shadow: 0 20px 48px -20px rgba(0,0,0,.85); padding: 6px; overflow: hidden;
+}
+.menu-id { padding: 9px 11px 10px; border-bottom: 1px solid var(--border); margin-bottom: 6px; display: flex; flex-direction: column; gap: 2px; }
+.menu-name { font-size: 13px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-sub { font-size: 11.5px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-item {
+  width: 100%; text-align: left; padding: 9px 11px; border-radius: 8px; border: 0;
+  background: transparent; color: var(--text-dim); font: inherit; font-size: 13px; cursor: pointer;
+}
+.menu-item:hover { background: var(--surface-2); color: var(--text); }
 
 .app-main { max-width: 1320px; margin: 0 auto; padding: 26px 22px 80px; }
 .section-head { display: flex; align-items: baseline; gap: 12px; margin: 6px 2px 20px; }
@@ -109,15 +130,21 @@ a { color: inherit; text-decoration: none; }
 .section-head .count { color: var(--text-faint); font-size: 13px; }
 
 /* ---------- grid + cards (uiverse-style: clean showcase, meta below) ---------- */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
+/* Masonry columns so each card keeps its own height (cards tall, toggles short)
+   instead of every tile in a row stretching to the tallest one. */
+.grid { columns: 300px; column-gap: 22px; }
 
 /* The card is just the showcase + meta below it — no outer box/border. */
-.card { position: relative; background: transparent; border: 0; transition: transform .16s ease; }
+.card {
+  position: relative; background: transparent; border: 0; transition: transform .16s ease;
+  break-inside: avoid; margin: 0 0 22px;
+}
 .card:hover { transform: translateY(-3px); }
 
-/* The showcase: a clean rounded rectangle, component perfectly centered. */
+/* The showcase: a clean rounded rectangle, component perfectly centered.
+   Height is set inline per component kind (see showcaseHeight). */
 .showcase {
-  position: relative; height: 220px; border-radius: 16px; overflow: hidden;
+  position: relative; height: 224px; border-radius: 16px; overflow: hidden;
   border: 1px solid var(--border); display: grid; place-items: center;
   transition: border-color .16s ease, box-shadow .16s ease;
 }

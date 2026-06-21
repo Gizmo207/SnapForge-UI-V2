@@ -28,7 +28,7 @@ export function PreviewSandbox({ component }: { component: Component }) {
   if (component.framework === 'html') {
     const srcDoc = `<!doctype html><html><head><meta charset="utf-8"/><style>
       ${NO_SCROLL}
-      body{display:grid;place-items:center;padding:22px;background:${sc.bg};color:${sc.fg};
+      body{display:grid;place-items:center;padding:16px;background:${sc.bg};color:${sc.fg};
         font-family:Inter,system-ui,-apple-system,sans-serif}
     </style></head><body>${artifact}</body></html>`;
     return (
@@ -50,7 +50,7 @@ s.textContent = \`${NO_SCROLL} #root{height:100%}\`;
 document.head.appendChild(s);
 createRoot(document.getElementById('root')!).render(
   React.createElement('div',
-    { style: { height: '100%', width: '100%', display: 'grid', placeItems: 'center', padding: 22, background: '${sc.bg}', color: '${sc.fg}' } },
+    { style: { height: '100%', width: '100%', display: 'grid', placeItems: 'center', padding: 16, background: '${sc.bg}', color: '${sc.fg}' } },
     React.createElement(App)
   )
 );`;

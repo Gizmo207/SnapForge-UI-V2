@@ -1,4 +1,4 @@
-import { getCurrentUserId } from '@/adapters/auth/session';
+import { getCurrentUserId, getViewerProfile } from '@/adapters/auth/session';
 import { listComponents } from '@/adapters/supabase/vaultRepository';
 import { Landing } from '@/components/Landing';
 import { VaultApp } from '@/components/VaultApp';
@@ -21,5 +21,7 @@ export default async function HomePage() {
     components = [];
   }
 
-  return <VaultApp initial={components} userId={userId} />;
+  const viewer = await getViewerProfile();
+
+  return <VaultApp initial={components} userId={userId} viewer={viewer} />;
 }

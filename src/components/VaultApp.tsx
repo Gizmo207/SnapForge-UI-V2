@@ -3,14 +3,24 @@
 import { useMemo, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import type { Component } from '@/domains/shared/component';
+import type { ViewerProfile } from '@/adapters/auth/session';
 import { ComponentCard } from './ComponentCard';
 import { PasteModal } from './PasteModal';
 
-export function VaultApp({ initial, userId }: { initial: Component[]; userId: string }) {
+export function VaultApp({
+  initial,
+  userId,
+  viewer,
+}: {
+  initial: Component[];
+  userId: string;
+  viewer?: ViewerProfile;
+}) {
   const [components, setComponents] = useState<Component[]>(initial);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,7 +100,8 @@ export function VaultApp({ initial, userId }: { initial: Component[]; userId: st
     URL.revokeObjectURL(url);
   }
 
-  const avatarLetter = (userId.split(':')[1] ?? userId).charAt(0).toUpperCase();
+  const displayName = viewer?.name || viewer?.email || null;
+  const avatarLetter = (displayName ?? 'You').charAt(0).toUpperCase();
 
   return (
     <>
@@ -112,17 +123,47 @@ export function VaultApp({ initial, userId }: { initial: Component[]; userId: st
         </div>
         <div className="topbar-spacer" />
         <button className="btn btn-primary" onClick={() => setModalOpen(true)}>
-          ＋ Paste snippet
+          ＋ Add component
         </button>
-        <button className="btn" disabled={selected.size === 0} onClick={exportSelected}>
+        <button
+          className="btn"
+          disabled={selected.size === 0}
+          onClick={exportSelected}
+          title={selected.size ? `Export ${selected.size} selected` : 'Select components to export'}
+        >
           ⬇ Export{selected.size ? ` (${selected.size})` : ''}
         </button>
-        <div className="userchip">
-          <span className="avatar">{avatarLetter}</span>
+        <div className="usermenu">
+          <button
+            className="avatar"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+          >
+            {viewer?.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={viewer.image} alt="" />
+            ) : (
+              avatarLetter
+            )}
+          </button>
+          {menuOpen && (
+            <>
+              <div className="menu-scrim" onClick={() => setMenuOpen(false)} />
+              <div className="menu" role="menu">
+                <div className="menu-id">
+                  <span className="menu-name">{displayName ?? 'Signed in'}</span>
+                  {viewer?.email && viewer.email !== displayName && (
+                    <span className="menu-sub">{viewer.email}</span>
+                  )}
+                </div>
+                <button className="menu-item" role="menuitem" onClick={() => signOut()}>
+                  ⇥ Sign out
+                </button>
+              </div>
+            </>
+          )}
         </div>
-        <button className="icon-btn" title="Sign out" onClick={() => signOut()} aria-label="Sign out">
-          ⎋
-        </button>
       </header>
 
       <main className="app-main">
