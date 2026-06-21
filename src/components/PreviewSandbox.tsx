@@ -66,10 +66,26 @@ import App from './App';
 ${twInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
   html{background:${sc.bg};color:${sc.fg}}
-  body{display:grid;place-items:center;padding:16px}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;overflow:hidden}
   #root{display:contents}\`;
 document.head.appendChild(s);
-createRoot(document.getElementById('root')!).render(React.createElement(App));`;
+const fitEl = document.createElement('div');
+fitEl.id = 'fit';
+fitEl.style.transformOrigin = 'center center';
+document.getElementById('root').appendChild(fitEl);
+createRoot(fitEl).render(React.createElement(App));
+// Auto-fit: scale the rendered component down so it never overflows the tile.
+function fit(){
+  fitEl.style.transform = 'none';
+  const r = fitEl.getBoundingClientRect();
+  if(!r.width || !r.height) return;
+  const aw = window.innerWidth - 28, ah = window.innerHeight - 28;
+  const scale = Math.min(1, aw / r.width, ah / r.height);
+  fitEl.style.transform = 'scale(' + scale + ')';
+}
+try { new ResizeObserver(fit).observe(fitEl); } catch(e){}
+window.addEventListener('resize', fit);
+[0,80,250,600,1200].forEach(function(t){ setTimeout(fit, t); });`;
 
   return (
     <SandpackProvider

@@ -17,8 +17,8 @@ export function showcaseHeight(c: Component): number {
   const k = `${c.category} ${c.subcategory}`.toLowerCase();
   if (/card/.test(k)) return 400;
   if (/form/.test(k)) return 360;
-  if (/(button|checkbox|toggle|switch|radio|loader|spinner|tooltip|input)/.test(k)) return 196;
-  return 224;
+  if (/(button|checkbox|toggle|switch|radio|loader|spinner|tooltip|input)/.test(k)) return 240;
+  return 240;
 }
 
 // A Tailwind utility token, e.g. flex, bg-black, p-4, rounded-xl, hover:scale-105.
