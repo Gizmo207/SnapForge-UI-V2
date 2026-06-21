@@ -2,7 +2,9 @@
 
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
-import { pickShowcase } from './showcase';
+import { pickShowcase, usesTailwind } from './showcase';
+
+const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
 
 /**
  * The Preview boundary. Renders pasted code ONLY inside a sandbox — never in the
@@ -24,9 +26,14 @@ export function PreviewSandbox({ component }: { component: Component }) {
 
   const artifact = component.sanitizedArtifact;
   const sc = pickShowcase(component);
+  // Tailwind utility classes need the Tailwind engine running inside the
+  // sandbox; inject its runtime only when the snippet actually uses utilities,
+  // so self-contained components (styled-components, plain CSS) are untouched.
+  const tailwind = usesTailwind(artifact);
 
   if (component.framework === 'html') {
-    const srcDoc = `<!doctype html><html><head><meta charset="utf-8"/><style>
+    const twTag = tailwind ? `<script src="${TAILWIND_CDN}"></script>` : '';
+    const srcDoc = `<!doctype html><html><head><meta charset="utf-8"/>${twTag}<style>
       ${NO_SCROLL}
       html{background:${sc.bg};color:${sc.fg}}
       body{display:grid;place-items:center;padding:16px;
@@ -47,10 +54,16 @@ export function PreviewSandbox({ component }: { component: Component }) {
   // it would paint as a normal box at z-index 0 and hide a component's
   // negative-z-index layers (glow borders, blurred shadows). With only <html>
   // painted, those layers render above the canvas and stay visible.
+  const twInject = tailwind
+    ? `const tw = document.createElement('script');
+tw.src = '${TAILWIND_CDN}';
+document.head.appendChild(tw);
+`
+    : '';
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-const s = document.createElement('style');
+${twInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
   html{background:${sc.bg};color:${sc.fg}}
   body{display:grid;place-items:center;padding:16px}
