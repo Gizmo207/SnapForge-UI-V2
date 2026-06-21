@@ -2,15 +2,17 @@
 
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
+import { pickShowcase } from './showcase';
 
 /**
  * The Preview boundary. Renders pasted code ONLY inside a sandbox — never in the
- * host React tree — and re-checks the gate here: a component that is not
- * `allowed` is never handed to a renderer.
+ * host React tree — and re-checks the gate: a component that is not `allowed` is
+ * never handed to a renderer.
  *
- *  - HTML  -> a fully locked <iframe sandbox=""> (no script execution at all);
- *             the artifact is already DOMPurify-cleaned.
- *  - React -> Sandpack's sandboxed iframe bundler (deps resolve from npm).
+ *  - HTML  -> a fully locked <iframe sandbox=""> (no script execution).
+ *  - React -> Sandpack's sandboxed bundler. Detected dependencies are declared
+ *             so packages like styled-components resolve from the CDN. The
+ *             component is centered on a showcase background.
  */
 export function PreviewSandbox({ component }: { component: Component }) {
   if (component.sanitizationOutcome !== 'allowed' || !component.sanitizedArtifact) {
@@ -18,11 +20,12 @@ export function PreviewSandbox({ component }: { component: Component }) {
   }
 
   const artifact = component.sanitizedArtifact;
+  const sc = pickShowcase(component);
 
   if (component.framework === 'html') {
     const srcDoc = `<!doctype html><html><head><meta charset="utf-8"/><style>
       html,body{height:100%;margin:0}
-      body{display:grid;place-items:center;padding:14px;background:transparent;color:#f3f3f7;
+      body{display:grid;place-items:center;padding:18px;background:${sc.bg};color:${sc.fg};
         font-family:Inter,system-ui,-apple-system,sans-serif}
     </style></head><body>${artifact}</body></html>`;
     return (
@@ -30,16 +33,28 @@ export function PreviewSandbox({ component }: { component: Component }) {
         title={component.name}
         sandbox=""
         srcDoc={srcDoc}
-        style={{ width: '100%', height: '100%', border: 0, background: 'transparent' }}
+        style={{ width: '100%', height: '100%', border: 0, background: sc.bg }}
       />
     );
   }
 
+  const dependencies = Object.fromEntries(component.dependencies.map((d) => [d, 'latest']));
+  const entry = `import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+createRoot(document.getElementById('root')!).render(
+  React.createElement('div',
+    { style: { minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 18, background: '${sc.bg}', color: '${sc.fg}' } },
+    React.createElement(App)
+  )
+);`;
+
   return (
     <SandpackProvider
       template="react-ts"
-      theme="dark"
-      files={{ '/App.tsx': artifact }}
+      theme={sc.theme}
+      customSetup={{ dependencies }}
+      files={{ '/App.tsx': artifact, '/index.tsx': entry }}
       style={{ height: '100%' }}
     >
       <SandpackPreview

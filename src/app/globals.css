@@ -108,49 +108,56 @@ a { color: inherit; text-decoration: none; }
 .section-head h2 { font-size: 20px; margin: 0; letter-spacing: -0.01em; }
 .section-head .count { color: var(--text-faint); font-size: 13px; }
 
-/* ---------- grid + cards ---------- */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }
+/* ---------- grid + cards (uiverse-style: clean showcase + slim footer) ---------- */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
 .card {
   position: relative; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden;
+  border-radius: 14px; overflow: hidden;
   transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
 }
-.card:hover { transform: translateY(-4px); border-color: var(--border-2); box-shadow: 0 18px 40px -22px rgba(0,0,0,.8), 0 0 0 1px rgba(139,92,246,.18); }
-.card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 18px 40px -22px rgba(139,92,246,.5); }
-.card.blocked { border-color: rgba(251,113,133,.4); }
+.card:hover { transform: translateY(-3px); border-color: var(--border-2); box-shadow: 0 20px 44px -24px rgba(0,0,0,.85); }
+.card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 18px 40px -24px rgba(139,92,246,.5); }
 
+/* The showcase: a clean rectangle, component perfectly centered. bg set inline. */
 .card-stage {
-  position: relative; height: 188px;
-  background:
-    linear-gradient(0deg, rgba(0,0,0,.18), rgba(0,0,0,.18)),
-    repeating-conic-gradient(#101019 0% 25%, #0c0c14 0% 50%) 50% / 22px 22px;
+  position: relative; height: 210px;
   display: grid; place-items: center; overflow: hidden;
 }
 .card-stage iframe { border: 0; width: 100%; height: 100%; background: transparent; }
-.stage-poster {
-  position: absolute; inset: 0; display: grid; place-items: center; gap: 8px;
-  cursor: pointer; color: var(--text-faint); font-size: 12.5px; text-align: center;
-}
-.stage-poster .play { width: 42px; height: 42px; border-radius: 50%; background: var(--grad-soft); border: 1px solid var(--border-2); display: grid; place-items: center; color: var(--text); }
-.stage-blocked { display: grid; place-items: center; gap: 8px; padding: 16px; color: var(--bad); font-size: 12.5px; text-align: center; }
+.card-stage .sp-wrapper, .card-stage .sp-layout, .card-stage .sp-stack, .card-stage .sp-preview-container { height: 100% !important; background: transparent !important; border: 0 !important; }
+.card-stage .sp-preview-iframe { background: transparent !important; }
 
-.card-body { padding: 14px 15px 15px; }
-.card-title { display: flex; align-items: center; gap: 8px; }
-.card-title h3 { margin: 0; font-size: 14.5px; font-weight: 650; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.select-box {
-  width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--border-2);
-  display: grid; place-items: center; cursor: pointer; flex: none; color: transparent; transition: all .12s ease;
+.stage-poster {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  cursor: pointer; background: transparent; border: 0;
 }
-.select-box.on { background: var(--grad); border-color: transparent; color: #fff; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
-.chip {
-  font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
-  background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
+.stage-poster .play {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(255,255,255,.06); backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,.16); display: grid; place-items: center;
+  font-size: 14px; padding-left: 3px; transition: transform .14s ease;
 }
-.chip.fw { background: var(--grad-soft); border-color: var(--border-2); color: var(--text); }
-.chip.tag { color: var(--text-faint); }
-.card-foot { margin-top: 11px; display: flex; gap: 8px; }
-.card-foot .btn { padding: 7px 11px; font-size: 12.5px; }
+.card:hover .stage-poster .play { transform: scale(1.08); }
+.stage-blocked { display: grid; place-items: center; padding: 16px; color: var(--bad); font-size: 12.5px; text-align: center; }
+
+/* Selection control: subtle, top-right, appears on hover or when selected. */
+.select-overlay {
+  position: absolute; top: 10px; right: 10px;
+  width: 24px; height: 24px; border-radius: 8px; cursor: pointer;
+  background: rgba(10,10,16,.5); backdrop-filter: blur(6px);
+  border: 1.5px solid rgba(255,255,255,.28); color: transparent;
+  display: grid; place-items: center; font-size: 13px; font-weight: 800;
+  opacity: 0; transition: opacity .14s ease, background .14s ease, border-color .14s ease;
+}
+.card:hover .select-overlay { opacity: 1; }
+.select-overlay.on { opacity: 1; background: var(--grad); border-color: transparent; color: #fff; }
+
+.card-foot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-top: 1px solid var(--border);
+}
+.card-foot .name { font-size: 13.5px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-foot .fw-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-faint); }
 
 /* ---------- empty state ---------- */
 .empty { text-align: center; padding: 90px 20px; }
