@@ -48,6 +48,22 @@ export function VaultApp({ initial, userId }: { initial: Component[]; userId: st
     }
   }
 
+  async function setTheme(id: string, theme: 'light' | 'dark') {
+    // Optimistic: flip the stage instantly, then persist.
+    setComponents((prev) =>
+      prev.map((c) => (c.componentId === id ? { ...c, showcaseTheme: theme } : c)),
+    );
+    try {
+      await fetch('/api/components', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, showcaseTheme: theme }),
+      });
+    } catch {
+      /* keep the optimistic state; it re-syncs on next load */
+    }
+  }
+
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -126,6 +142,7 @@ export function VaultApp({ initial, userId }: { initial: Component[]; userId: st
                 component={c}
                 selected={selected.has(c.componentId)}
                 onToggle={() => toggle(c.componentId)}
+                onSetTheme={(theme) => setTheme(c.componentId, theme)}
               />
             ))}
           </div>

@@ -2,18 +2,57 @@ import type { Component } from '@/domains/shared/component';
 
 export type Showcase = { theme: 'light' | 'dark'; bg: string; fg: string };
 
-const DARK = /(dark|neon|glow|cyber|matrix|terminal|night|midnight|space|galaxy|black)/;
+// Backgrounds sit a step *off* the near-black page so the card visibly floats,
+// the way uiverse's cards do (dark ≈ a lifted charcoal, light ≈ soft grey).
+const DARK: Showcase = { theme: 'dark', bg: '#1b1c24', fg: '#f3f3f7' };
+const LIGHT: Showcase = { theme: 'light', bg: '#ececf1', fg: '#0f172a' };
+
+const DARK_TAGS = /(dark|neon|glow|cyber|matrix|terminal|night|midnight|space|galaxy|black)/;
+
+/** Relative luminance (0 = black, 1 = white) of the first color found, or null. */
+function luminance(value: string): number | null {
+  let r: number, g: number, b: number;
+  const hex = value.match(/#([0-9a-f]{3}|[0-9a-f]{6})\b/i);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+    r = parseInt(h.slice(0, 2), 16);
+    g = parseInt(h.slice(2, 4), 16);
+    b = parseInt(h.slice(4, 6), 16);
+  } else {
+    const m = value.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+    if (!m) return null;
+    [r, g, b] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  }
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+}
 
 /**
- * Picks a showcase background that makes the component look its best — a clean
- * light surface by default, or a dark one when the component reads as dark/neon.
- * (Ported from v1's preview-theme heuristic.)
+ * Picks the showcase background that makes a component look its best.
+ *
+ *  1. An explicit per-card override (set by the user) always wins.
+ *  2. Otherwise we infer the component's intended theme from its own code:
+ *     a dark self-background, or light text, means it was built for a dark
+ *     stage; a light self-background or dark text means a light stage.
+ *  3. Failing any signal, we default to a light stage — which, on our dark
+ *     page, yields the mixed light/dark grid uiverse has.
  */
 export function pickShowcase(c: Component): Showcase {
-  const hay = `${c.tags.join(' ')} ${c.source ?? ''}`.toLowerCase();
-  const darkBg = /background[^;]*:\s*(#0|#1[0-9a-f]|rgb\(\s*[0-3]?\d\s*,)/.test(hay);
-  if (DARK.test(c.tags.join(' ')) || darkBg) {
-    return { theme: 'dark', bg: '#0e0e15', fg: '#f3f3f7' };
+  if (c.showcaseTheme === 'dark') return DARK;
+  if (c.showcaseTheme === 'light') return LIGHT;
+
+  if (DARK_TAGS.test(c.tags.join(' ').toLowerCase())) return DARK;
+
+  const src = c.source ?? '';
+  const bg = src.match(/background(?:-color)?\s*:\s*([^;{}]+)/i);
+  if (bg) {
+    const l = luminance(bg[1]);
+    if (l !== null) return l < 0.4 ? DARK : LIGHT;
   }
-  return { theme: 'light', bg: '#edeef2', fg: '#0f172a' };
+  const color = src.match(/(?:^|[^-])color\s*:\s*([^;{}]+)/i);
+  if (color) {
+    const l = luminance(color[1]);
+    if (l !== null) return l > 0.6 ? DARK : LIGHT;
+  }
+  return LIGHT;
 }

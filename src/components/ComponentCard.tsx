@@ -9,10 +9,12 @@ export function ComponentCard({
   component,
   selected,
   onToggle,
+  onSetTheme,
 }: {
   component: Component;
   selected: boolean;
   onToggle: () => void;
+  onSetTheme: (theme: 'light' | 'dark') => void;
 }) {
   const [live, setLive] = useState(false);
   const allowed = component.sanitizationOutcome === 'allowed' && !!component.sanitizedArtifact;
@@ -34,6 +36,15 @@ export function ComponentCard({
             <span className="play">▶</span>
           </button>
         )}
+
+        <button
+          className="theme-toggle"
+          onClick={() => onSetTheme(sc.theme === 'dark' ? 'light' : 'dark')}
+          aria-label={`show on ${sc.theme === 'dark' ? 'light' : 'dark'} background`}
+          title="Toggle showcase background"
+        >
+          {sc.theme === 'dark' ? '☀' : '☾'}
+        </button>
 
         <button
           className={`select-overlay${selected ? ' on' : ''}`}

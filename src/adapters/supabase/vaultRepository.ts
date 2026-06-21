@@ -21,6 +21,7 @@ type Row = {
   subcategory: string;
   tags: string[];
   dependencies: string[];
+  showcase_theme: 'light' | 'dark' | null;
   html_source: string | null;
   css_source: string | null;
   created_at: string;
@@ -39,6 +40,7 @@ function toComponent(row: Row): Component {
     subcategory: row.subcategory,
     tags: row.tags ?? [],
     dependencies: row.dependencies ?? [],
+    showcaseTheme: row.showcase_theme ?? null,
     htmlSource: row.html_source,
     cssSource: row.css_source,
     createdAt: row.created_at,
@@ -59,6 +61,7 @@ function toRow(component: Component, ownerId: string): Row {
     subcategory: component.subcategory,
     tags: component.tags,
     dependencies: component.dependencies,
+    showcase_theme: component.showcaseTheme ?? null,
     html_source: component.htmlSource ?? null,
     css_source: component.cssSource ?? null,
     created_at: component.createdAt,
@@ -86,6 +89,23 @@ export async function listComponents(ownerId: string): Promise<Component[]> {
     .order('created_at', { ascending: false });
   if (error) throw new Error(`listComponents failed: ${error.message}`);
   return (data as Row[]).map(toComponent);
+}
+
+export async function updateShowcaseTheme(
+  componentId: string,
+  ownerId: string,
+  theme: 'light' | 'dark' | null,
+): Promise<Component> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('components')
+    .update({ showcase_theme: theme })
+    .eq('component_id', componentId)
+    .eq('owner_id', ownerId)
+    .select()
+    .single();
+  if (error) throw new Error(`updateShowcaseTheme failed: ${error.message}`);
+  return toComponent(data as Row);
 }
 
 export async function getComponentsByIds(ids: string[], ownerId: string): Promise<Component[]> {

@@ -17,6 +17,8 @@ export type Component = {
   subcategory: string;
   tags: string[];
   dependencies: string[];
+  /** User's per-card showcase background override; null/undefined => auto-detect. */
+  showcaseTheme?: 'light' | 'dark' | null;
   /** Optional secondary artifacts (e.g. an HTML variant + CSS) for export. */
   htmlSource?: string | null;
   cssSource?: string | null;
