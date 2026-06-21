@@ -47,6 +47,32 @@ export function usesTailwind(code: string): boolean {
   return false;
 }
 
+/**
+ * Whether a component looks good on EITHER background — true when it paints its
+ * own opaque backdrop (a real container background, not a tiny `:before` accent
+ * or a translucent fill). Such components are theme-agnostic, so the light/dark
+ * toggle stays available. Components without a backdrop depend on the stage for
+ * contrast and are locked to their best theme (toggle hidden).
+ */
+export function worksOnBoth(code: string): boolean {
+  const blocks = code.match(/[^{}]+\{[^{}]*\}/g);
+  if (!blocks) return false;
+  for (const block of blocks) {
+    const brace = block.indexOf('{');
+    const selector = block.slice(0, brace);
+    if (/::?(before|after)/i.test(selector)) continue; // pseudo-element accents
+    const body = block.slice(brace);
+    const bg = body.match(/background(?:-color)?\s*:\s*([^;}]+)/i);
+    if (!bg) continue;
+    const value = bg[1].toLowerCase().trim();
+    if (!value || value === 'none' || value === 'transparent') continue;
+    if (value.includes('var(')) continue; // unknown — often a translucent token
+    if (/rgba?\([^)]*,\s*0?\.\d+\s*\)/.test(value)) continue; // translucent
+    return true; // an opaque backdrop on a real container
+  }
+  return false;
+}
+
 /** Relative luminance (0 = black, 1 = white) of the first color found, or null. */
 function luminance(value: string): number | null {
   let r: number, g: number, b: number;

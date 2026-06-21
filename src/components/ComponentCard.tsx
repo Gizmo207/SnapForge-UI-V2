@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Component } from '@/domains/shared/component';
 import { PreviewSandbox } from './PreviewSandbox';
-import { pickShowcase, showcaseHeight } from './showcase';
+import { pickShowcase, showcaseHeight, worksOnBoth } from './showcase';
 
 export function ComponentCard({
   component,
@@ -20,6 +20,9 @@ export function ComponentCard({
   const stageRef = useRef<HTMLDivElement>(null);
   const allowed = component.sanitizationOutcome === 'allowed' && !!component.sanitizedArtifact;
   const sc = pickShowcase(component);
+  // Only offer the light/dark toggle when both look good; otherwise the stage is
+  // locked to the component's best theme so it always reads well.
+  const canToggle = worksOnBoth(component.source);
 
   // Auto-load the preview when the card scrolls into view (no hover needed).
   // Offscreen cards stay deferred so we don't mount dozens of sandboxes at once.
@@ -61,14 +64,16 @@ export function ComponentCard({
           </div>
         )}
 
-        <button
-          className="theme-toggle"
-          onClick={() => onSetTheme(sc.theme === 'dark' ? 'light' : 'dark')}
-          aria-label={`show on ${sc.theme === 'dark' ? 'light' : 'dark'} background`}
-          title="Toggle showcase background"
-        >
-          {sc.theme === 'dark' ? '☀' : '☾'}
-        </button>
+        {canToggle && (
+          <button
+            className="theme-toggle"
+            onClick={() => onSetTheme(sc.theme === 'dark' ? 'light' : 'dark')}
+            aria-label={`show on ${sc.theme === 'dark' ? 'light' : 'dark'} background`}
+            title="Toggle showcase background"
+          >
+            {sc.theme === 'dark' ? '☀' : '☾'}
+          </button>
+        )}
 
         <button
           className={`select-overlay${selected ? ' on' : ''}`}
