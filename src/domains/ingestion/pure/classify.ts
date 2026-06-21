@@ -19,7 +19,13 @@ type Rule = {
  * `components / misc`. Ported and tightened from SnapForge v1.
  */
 const rules: Rule[] = [
-  // Structural detection (highest priority)
+  // Author intent (highest priority): the declared component name is the most
+  // reliable signal — `const Checkbox` vs `const Switch` — because the keywords
+  // "toggle"/"switch"/"checkbox" all leak into each other's class names.
+  { pattern: (c) => /(?:function|const|class)\s+[A-Za-z0-9_]*Checkbox/i.test(c), category: 'primitives', subcategory: 'checkboxes', tag: 'checkbox', priority: 25 },
+  { pattern: (c) => /(?:function|const|class)\s+[A-Za-z0-9_]*(?:Toggle|Switch)/i.test(c), category: 'primitives', subcategory: 'toggles', tag: 'toggle', priority: 24 },
+
+  // Structural detection (high priority)
   { pattern: (c) => /<form/i.test(c) && /<input/i.test(c), category: 'patterns', subcategory: 'forms', tag: 'form', priority: 20 },
   { pattern: (c) => c.trim().startsWith('<input'), category: 'primitives', subcategory: 'inputs', tag: 'input', priority: 19 },
   { pattern: (c) => c.trim().startsWith('<button'), category: 'primitives', subcategory: 'buttons', tag: 'button', priority: 18 },
@@ -157,8 +163,9 @@ export function classify(code: string): Classification {
     if (rule.pattern.test(code)) tags.add(rule.tag);
   }
 
-  // A toggle built on a checkbox input shouldn't be tagged a checkbox.
+  // Keep the cross-tag clean: a toggle isn't a checkbox and vice-versa.
   if (subcategory === 'toggles') tags.delete('checkbox');
+  if (subcategory === 'checkboxes') tags.delete('toggle');
 
   return { category, subcategory, tags: Array.from(tags).sort() };
 }
