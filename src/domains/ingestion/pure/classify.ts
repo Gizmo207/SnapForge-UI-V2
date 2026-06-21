@@ -29,9 +29,11 @@ const rules: Rule[] = [
   { pattern: /checkbox/i, category: 'primitives', subcategory: 'checkboxes', tag: 'checkbox', priority: 10 },
   { pattern: /checkmark/i, category: 'primitives', subcategory: 'checkboxes', tag: 'checkbox', priority: 8 },
 
-  // Toggles
-  { pattern: /toggle/i, category: 'primitives', subcategory: 'toggles', tag: 'toggle', priority: 10 },
-  { pattern: /switch/i, category: 'primitives', subcategory: 'toggles', tag: 'toggle', priority: 9 },
+  // Toggles. A toggle/switch is almost always built as a styled
+  // <input type="checkbox">, so these must outrank the checkbox-input rule
+  // (priority 11) — otherwise every toggle is mislabeled as a checkbox.
+  { pattern: /toggle|\bslider\b/i, category: 'primitives', subcategory: 'toggles', tag: 'toggle', priority: 14 },
+  { pattern: /switch/i, category: 'primitives', subcategory: 'toggles', tag: 'toggle', priority: 13 },
 
   // Radios
   { pattern: /input.*type=["']radio["']/i, category: 'primitives', subcategory: 'radio-buttons', tag: 'radio', priority: 11 },
@@ -154,6 +156,9 @@ export function classify(code: string): Classification {
   for (const rule of tagRules) {
     if (rule.pattern.test(code)) tags.add(rule.tag);
   }
+
+  // A toggle built on a checkbox input shouldn't be tagged a checkbox.
+  if (subcategory === 'toggles') tags.delete('checkbox');
 
   return { category, subcategory, tags: Array.from(tags).sort() };
 }
