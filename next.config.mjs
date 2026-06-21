@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Keep these out of the webpack bundle so Node resolves their correct CJS
-  // entry at runtime. Bundling them caused `require() of ES Module` on Vercel
-  // (dompurify ships an ESM build that the serverless bundler require()'d).
-  serverExternalPackages: ['isomorphic-dompurify', 'dompurify', 'jsdom', 'typescript'],
+  // Keep the (large, CJS) TypeScript compiler out of the webpack bundle; Node
+  // resolves it at runtime. HTML sanitization now uses htmlparser2 (pure CJS),
+  // so jsdom/dompurify are gone entirely.
+  serverExternalPackages: ['typescript'],
 };
 
 export default nextConfig;

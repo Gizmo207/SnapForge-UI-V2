@@ -15,7 +15,7 @@
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",
     "@supabase/supabase-js": "^2.45.0",
-    "isomorphic-dompurify": "^2.16.0",
+    "htmlparser2": "^9.1.0",
     "jszip": "^3.10.1",
     "next": "^15.1.0",
     "next-auth": "^4.24.14",

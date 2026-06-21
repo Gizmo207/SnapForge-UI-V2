@@ -1,44 +1,58 @@
-import DOMPurify from 'isomorphic-dompurify';
+import { Parser } from 'htmlparser2';
 import { allowed, blocked, type SanitizationDecision } from './types';
 
 /**
- * HTML sanitization gate. Decides on DOMPurify's cleaned DOM — never on raw
- * string scans. Default-deny: if DOMPurify had to strip anything dangerous
- * (script elements, event-handler attributes, unsafe URLs, etc.), the snippet
- * is BLOCKED rather than silently rendering a neutered version. Pristine-safe
- * markup is ALLOWED, with the cleaned markup as the artifact.
+ * HTML sanitization gate. Parses the markup with htmlparser2 (a pure, no-DOM
+ * parser) and walks it for dangerous constructs — never raw string scans, and
+ * no jsdom/DOMPurify (which broke serverless bundling). Default-deny: any
+ * dangerous element/attribute blocks the snippet. Clean markup is ALLOWED with
+ * the original source as the artifact.
  */
+
+const DANGEROUS_TAGS = new Set([
+  'script', 'iframe', 'object', 'embed', 'base', 'meta', 'link',
+  'frame', 'frameset', 'applet', 'noscript',
+]);
+
+// Attributes whose value is treated as a URL.
+const URL_ATTRS = new Set(['href', 'src', 'xlink:href', 'action', 'formaction', 'srcdoc', 'background', 'poster']);
+
+const UNSAFE_URL = /^\s*(?:javascript|vbscript|data:text\/html)/i;
+
 export function htmlGate(source: string): SanitizationDecision {
   if (!source.trim()) return blocked(['empty source']);
 
-  const clean = DOMPurify.sanitize(source);
+  const reasons = new Set<string>();
 
-  // DOMPurify.removed logs what it stripped. Comment nodes are inert and benign;
-  // anything else removed (dangerous elements/attributes) is a block signal.
-  const removed = (DOMPurify.removed ?? []) as Array<{
-    element?: { nodeType?: number; tagName?: string };
-    attribute?: { name?: string };
-    from?: { nodeName?: string };
-  }>;
+  const parser = new Parser(
+    {
+      onopentag(name, attribs) {
+        const tag = name.toLowerCase();
+        if (DANGEROUS_TAGS.has(tag)) {
+          reasons.add(`disallowed element: <${tag}>`);
+        }
+        for (const [rawKey, value] of Object.entries(attribs)) {
+          const key = rawKey.toLowerCase();
+          if (key.startsWith('on')) {
+            reasons.add(`event-handler attribute: ${key}`);
+          } else if (URL_ATTRS.has(key) && UNSAFE_URL.test(value)) {
+            reasons.add(`unsafe URL in ${key}`);
+          } else if (key === 'style' && /expression\(|javascript:/i.test(value)) {
+            reasons.add('unsafe style');
+          }
+        }
+      },
+      onprocessinginstruction(name) {
+        // e.g. <?php ... ?> or <?xml ...> — not valid in an HTML snippet.
+        if (name) reasons.add('processing instruction');
+      },
+    },
+    { lowerCaseTags: true, lowerCaseAttributeNames: true, recognizeSelfClosing: true },
+  );
 
-  const dangerous = removed.filter((entry) => {
-    const node = entry.element;
-    if (node && node.nodeType === 8) return false; // HTML comment -> benign
-    return true;
-  });
+  parser.write(source);
+  parser.end();
 
-  if (dangerous.length > 0) {
-    const reasons = dangerous.map((entry) => {
-      if (entry.attribute?.name) {
-        return `stripped unsafe attribute: ${entry.attribute.name}`;
-      }
-      if (entry.element?.tagName) {
-        return `stripped unsafe element: <${entry.element.tagName.toLowerCase()}>`;
-      }
-      return 'stripped unsafe content';
-    });
-    return blocked(Array.from(new Set(reasons)));
-  }
-
-  return allowed(clean);
+  if (reasons.size > 0) return blocked(Array.from(reasons));
+  return allowed(source);
 }
