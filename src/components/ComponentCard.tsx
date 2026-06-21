@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Component } from '@/domains/shared/component';
 import { PreviewSandbox } from './PreviewSandbox';
 import { pickShowcase, showcaseHeight } from './showcase';
@@ -17,24 +17,48 @@ export function ComponentCard({
   onSetTheme: (theme: 'light' | 'dark') => void;
 }) {
   const [live, setLive] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
   const allowed = component.sanitizationOutcome === 'allowed' && !!component.sanitizedArtifact;
   const sc = pickShowcase(component);
+
+  // Auto-load the preview when the card scrolls into view (no hover needed).
+  // Offscreen cards stay deferred so we don't mount dozens of sandboxes at once.
+  useEffect(() => {
+    if (!allowed || live) return;
+    const el = stageRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setLive(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setLive(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [allowed, live]);
 
   return (
     <article className={`card${selected ? ' selected' : ''}`}>
       <div
+        ref={stageRef}
         className="showcase"
         style={{ background: sc.bg, height: showcaseHeight(component) }}
-        onMouseEnter={() => allowed && setLive(true)}
       >
         {!allowed ? (
           <div className="stage-blocked">🔒 blocked by gate</div>
         ) : live ? (
           <PreviewSandbox component={component} />
         ) : (
-          <button className="stage-poster" onClick={() => setLive(true)} aria-label="Preview">
-            <span className="play">▶</span>
-          </button>
+          <div className="stage-poster" aria-hidden>
+            <span className="stage-spinner" />
+          </div>
         )}
 
         <button
