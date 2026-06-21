@@ -28,7 +28,8 @@ export function PreviewSandbox({ component }: { component: Component }) {
   if (component.framework === 'html') {
     const srcDoc = `<!doctype html><html><head><meta charset="utf-8"/><style>
       ${NO_SCROLL}
-      body{display:grid;place-items:center;padding:16px;background:${sc.bg};color:${sc.fg};
+      html{background:${sc.bg};color:${sc.fg}}
+      body{display:grid;place-items:center;padding:16px;
         font-family:Inter,system-ui,-apple-system,sans-serif}
     </style></head><body>${artifact}</body></html>`;
     return (
@@ -42,15 +43,16 @@ export function PreviewSandbox({ component }: { component: Component }) {
   }
 
   const dependencies = Object.fromEntries(component.dependencies.map((d) => [d, 'latest']));
-  // Background goes on <body> (the canvas), NOT a wrapping div — otherwise a
-  // component's negative-z-index layers (glow borders, blurred shadows) render
-  // behind an intermediate background and disappear.
+  // Background goes on <html> ONLY (the canvas). If <body> also had a background,
+  // it would paint as a normal box at z-index 0 and hide a component's
+  // negative-z-index layers (glow borders, blurred shadows). With only <html>
+  // painted, those layers render above the canvas and stay visible.
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
-  html,body{background:${sc.bg};color:${sc.fg}}
+  html{background:${sc.bg};color:${sc.fg}}
   body{display:grid;place-items:center;padding:16px}
   #root{display:contents}\`;
 document.head.appendChild(s);
