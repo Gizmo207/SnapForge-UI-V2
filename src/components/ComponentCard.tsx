@@ -5,7 +5,13 @@ import type { Component, ComponentAsset } from '@/domains/shared/component';
 import { detectAssets } from '@/domains/ingestion/pure/detectAssets';
 import { PreviewSandbox } from './PreviewSandbox';
 import { AssetsModal } from './AssetsModal';
-import { pickShowcase, showcaseHeight, worksOnBoth } from './showcase';
+import {
+  pickShowcase,
+  showcaseHeight,
+  worksOnBoth,
+  isImmersive,
+  needsInteractionHint,
+} from './showcase';
 
 export function ComponentCard({
   component,
@@ -32,6 +38,7 @@ export function ComponentCard({
     assetRefs.includes(a.refPath),
   ).length;
   const missingCount = assetRefs.length - resolvedCount;
+  const immersive = isImmersive(component);
   const sc = pickShowcase(component);
   // Only offer the light/dark toggle when both look good; otherwise the stage is
   // locked to the component's best theme so it always reads well.
@@ -61,7 +68,7 @@ export function ComponentCard({
   }, [allowed, live]);
 
   return (
-    <article className={`card${selected ? ' selected' : ''}`}>
+    <article className={`card${selected ? ' selected' : ''}${immersive ? ' wide' : ''}`}>
       <div
         ref={stageRef}
         className="showcase"
@@ -69,8 +76,26 @@ export function ComponentCard({
       >
         {!allowed ? (
           <div className="stage-blocked">🔒 blocked by gate</div>
+        ) : missingCount > 0 ? (
+          <div className="stage-assets">
+            <div className="stage-assets-mark">🧩</div>
+            <div className="stage-assets-title">
+              Missing {missingCount} asset{missingCount > 1 ? 's' : ''}
+            </div>
+            <p>This component needs files that aren’t in the code to preview.</p>
+            <button className="btn btn-primary btn-sm" onClick={() => setAssetsOpen(true)}>
+              Upload files or paste URLs
+            </button>
+          </div>
         ) : live ? (
-          <PreviewSandbox component={component} />
+          <>
+            <PreviewSandbox component={component} />
+            {needsInteractionHint(component) && (
+              <div className="stage-hint" aria-hidden>
+                <span>✦ Hover to interact</span>
+              </div>
+            )}
+          </>
         ) : (
           <div className="stage-poster" aria-hidden>
             <span className="stage-spinner" />

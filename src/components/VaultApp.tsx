@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import type { Component } from '@/domains/shared/component';
 import type { ViewerProfile } from '@/adapters/auth/session';
@@ -40,6 +40,16 @@ export function VaultApp({
   const [components, setComponents] = useState<Component[]>(initial);
   const [query, setQuery] = useState('');
   const [activeCat, setActiveCat] = useState('all');
+
+  // Keep the selected category across reloads — refreshing while viewing Navbars
+  // should land back on Navbars, not reset to the full vault.
+  useEffect(() => {
+    const saved = window.localStorage.getItem('sf.activeCat');
+    if (saved) setActiveCat(saved);
+  }, []);
+  useEffect(() => {
+    window.localStorage.setItem('sf.activeCat', activeCat);
+  }, [activeCat]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
