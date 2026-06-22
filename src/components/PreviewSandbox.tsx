@@ -69,13 +69,32 @@ s.textContent = \`${NO_SCROLL}
   body{margin:0;width:100vw;height:100vh;overflow:hidden}
   #root{display:contents}\`;
 document.head.appendChild(s);
+// An error boundary so a component that throws at runtime (e.g. a Three.js scene
+// whose external .glb asset isn't bundled with the snippet) shows a readable
+// note instead of a blank/crashed canvas.
+class PreviewBoundary extends React.Component {
+  constructor(p){ super(p); this.state = { err: null }; }
+  static getDerivedStateFromError(err){ return { err: err }; }
+  render(){
+    if(this.state.err){
+      var msg = String((this.state.err && this.state.err.message) || this.state.err);
+      return React.createElement('div',
+        { style: { maxWidth: 280, padding: 16, textAlign: 'center', font: '12.5px/1.5 Inter, system-ui, sans-serif', opacity: 0.8 } },
+        React.createElement('div', { style: { fontSize: 18, marginBottom: 8 } }, '⚠️'),
+        React.createElement('div', { style: { fontWeight: 600, marginBottom: 6 } }, 'Preview unavailable'),
+        React.createElement('div', { style: { opacity: 0.75, wordBreak: 'break-word' } }, msg.slice(0, 200))
+      );
+    }
+    return this.props.children;
+  }
+}
 // A definite, full-tile flex box so percentage-sized components (e.g. a loader
 // whose root is width/height:100%) have a real box to fill instead of
 // collapsing to zero. We then scale the rendered child down if it overflows.
 const fitEl = document.createElement('div');
 fitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box';
 document.getElementById('root').appendChild(fitEl);
-createRoot(fitEl).render(React.createElement(App));
+createRoot(fitEl).render(React.createElement(PreviewBoundary, null, React.createElement(App)));
 function fit(){
   var child = fitEl.firstElementChild;
   if(!child) return;
