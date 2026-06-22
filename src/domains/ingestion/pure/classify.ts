@@ -24,6 +24,10 @@ const rules: Rule[] = [
   // "toggle"/"switch"/"checkbox" all leak into each other's class names.
   { pattern: (c) => /(?:function|const|class)\s+[A-Za-z0-9_]*Checkbox/i.test(c), category: 'primitives', subcategory: 'checkboxes', tag: 'checkbox', priority: 25 },
   { pattern: (c) => /(?:function|const|class)\s+[A-Za-z0-9_]*(?:Toggle|Switch)/i.test(c), category: 'primitives', subcategory: 'toggles', tag: 'toggle', priority: 24 },
+  // A component *declared* as a Card is a card even though it wraps a <button>
+  // (CTA), an <img>, etc. — author intent outranks inner primitive structure,
+  // otherwise composite components get filed under whatever element they contain.
+  { pattern: (c) => /(?:function|const|class)\s+[A-Za-z0-9_]*Card[A-Za-z0-9_]*/i.test(c), category: 'components', subcategory: 'cards', tag: 'card', priority: 23 },
 
   // Structural detection (high priority)
   { pattern: (c) => /<form/i.test(c) && /<input/i.test(c), category: 'patterns', subcategory: 'forms', tag: 'form', priority: 20 },
