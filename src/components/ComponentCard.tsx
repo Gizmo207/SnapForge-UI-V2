@@ -91,18 +91,11 @@ export function ComponentCard({
       >
         {!allowed ? (
           <div className="stage-blocked">🔒 blocked by gate</div>
-        ) : missingCount > 0 ? (
-          <div className="stage-assets">
-            <div className="stage-assets-mark">🧩</div>
-            <div className="stage-assets-title">
-              Missing {missingCount} asset{missingCount > 1 ? 's' : ''}
-            </div>
-            <p>This component needs files that aren’t in the code to preview.</p>
-            <button className="btn btn-primary btn-sm" onClick={() => setAssetsOpen(true)}>
-              Upload files or paste URLs
-            </button>
-          </div>
         ) : live ? (
+          // Missing assets never block the preview — a component usually renders
+          // fine without an optional image/texture (and the host library ships
+          // those demo files separately, so they can't be in the pasted code).
+          // We render anyway and surface the assets as a quiet chip nudge below.
           <PreviewSandbox component={component} />
         ) : (
           <div className="stage-poster" aria-hidden>
@@ -163,9 +156,13 @@ export function ComponentCard({
             <button
               className={`asset-chip${missingCount > 0 ? ' missing' : ' ok'}`}
               onClick={() => setAssetsOpen(true)}
-              title={missingCount > 0 ? `${missingCount} missing asset(s)` : 'Assets provided'}
+              title={
+                missingCount > 0
+                  ? `Optional: ${missingCount} referenced file${missingCount > 1 ? 's' : ''} not provided. The preview works without them — click to add images if you have them.`
+                  : 'All referenced files provided'
+              }
             >
-              {missingCount > 0 ? `⬆ ${missingCount} asset${missingCount > 1 ? 's' : ''}` : '✓ assets'}
+              {missingCount > 0 ? `＋ ${missingCount} optional` : '✓ assets'}
             </button>
           )}
           <span className="meta">{component.framework} ·</span>

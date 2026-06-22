@@ -105,9 +105,10 @@ export function AssetsModal({
         </div>
         <div className="modal-body">
           <p className="modal-hint" style={{ marginTop: 0 }}>
-            This component references files that aren’t in the code. For each one, either
-            <strong> Upload</strong> a file or paste a direct URL — then hit{' '}
-            <strong>Save &amp; close</strong>. (Up to 25&nbsp;MB each.)
+            Files the component references but that aren’t in the pasted code — sample photos,
+            textures, fonts. They’re <strong>optional</strong>: the preview works without them, and
+            host libraries ship these demo files separately. Add any you have (<strong>Upload</strong> a
+            file or paste a direct URL), then <strong>Save&nbsp;&amp;&nbsp;close</strong>. (Up to 25&nbsp;MB each.)
           </p>
           <div className="asset-list">
             {refs.map((ref) => (
