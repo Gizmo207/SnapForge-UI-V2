@@ -15,6 +15,12 @@ const DARK_TAGS = /(dark|neon|glow|cyber|matrix|terminal|night|midnight|space|ga
  */
 export function showcaseHeight(c: Component): number {
   const k = `${c.category} ${c.subcategory}`.toLowerCase();
+  // Showpiece components — full scenes, backgrounds, anything driving a canvas or
+  // carrying uploaded assets — read poorly in a small tile; give them room.
+  const immersive =
+    (c.assets?.length ?? 0) > 0 ||
+    /three|@react-three|<canvas|webgl|requestAnimationFrame|shader/i.test(c.source ?? '');
+  if (immersive || /(background|hero|navbar|banner|scene|gallery|3d)/.test(k)) return 480;
   if (/card/.test(k)) return 400;
   if (/form/.test(k)) return 360;
   if (/(button|checkbox|toggle|switch|radio|loader|spinner|tooltip|input)/.test(k)) return 240;
