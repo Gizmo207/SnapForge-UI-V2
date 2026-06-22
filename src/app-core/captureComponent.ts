@@ -1,4 +1,5 @@
 import { ingest } from '../domains/ingestion/pure/ingest';
+import { looksLikeOnlyCss } from '../domains/ingestion/pure/looksLikeCss';
 import { decideSanitization } from '../domains/sanitization/pure/sanitizationDecision';
 import { jsxGate } from '../domains/sanitization/pure/jsxGate';
 import { buildDemoApp } from '../domains/preview/pure/demoWrapper';
@@ -34,6 +35,16 @@ export function captureComponent(
   css?: string,
   demo?: string,
 ): Component {
+  // Guard the most common paste mistake: dropping a component's .css file into
+  // the main code box. Without the JSX/HTML there's nothing to render, so fail
+  // loudly with a fix instead of saving a card that prints CSS as text.
+  if (looksLikeOnlyCss(source)) {
+    throw new Error(
+      'This looks like a CSS stylesheet, not a component. Paste the component’s ' +
+        'JSX/HTML in the main box, then put this CSS in the “separate CSS file” field below.',
+    );
+  }
+
   const ingestion = ingest(source);
   const decision = decideSanitization(source, ingestion.framework);
   const timestamp = deps.now();

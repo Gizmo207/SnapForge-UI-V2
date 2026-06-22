@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { looksLikeOnlyCss } from '@/domains/ingestion/pure/looksLikeCss';
 
 export function PasteModal({
   busy,
@@ -18,6 +19,10 @@ export function PasteModal({
   const [showCss, setShowCss] = useState(false);
   const [demo, setDemo] = useState('');
   const [showDemo, setShowDemo] = useState(false);
+
+  // The main box wants the JSX/HTML. If it's a bare stylesheet, the component
+  // code is missing — warn before submit and steer the CSS to its own field.
+  const cssInCodeBox = looksLikeOnlyCss(value);
 
   return (
     <div className="overlay" onClick={onClose}>
@@ -40,6 +45,25 @@ export function PasteModal({
             It’s parsed, classified, and security-checked before anything runs. Code only
             previews inside a sandbox once it passes the gate.
           </p>
+
+          {cssInCodeBox && (
+            <div className="paste-warn">
+              <span>
+                ⚠ This looks like a <strong>CSS file</strong>, not a component. The main box
+                needs the JSX/HTML — paste the CSS in its own field instead.
+              </span>
+              <button
+                className="link-btn"
+                onClick={() => {
+                  setCss(value);
+                  setShowCss(true);
+                  setValue('');
+                }}
+              >
+                Move this to the CSS field →
+              </button>
+            </div>
+          )}
 
           {showCss ? (
             <div className="css-field">
@@ -102,7 +126,7 @@ export function PasteModal({
           </button>
           <button
             className="btn btn-primary"
-            disabled={!value.trim() || busy}
+            disabled={!value.trim() || busy || cssInCodeBox}
             onClick={() =>
               onSubmit(value, css.trim() ? css : undefined, demo.trim() ? demo : undefined)
             }
