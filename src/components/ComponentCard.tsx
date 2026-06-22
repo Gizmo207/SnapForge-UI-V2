@@ -13,12 +13,14 @@ export function ComponentCard({
   onToggle,
   onSetTheme,
   onAssetUploaded,
+  onDelete,
 }: {
   component: Component;
   selected: boolean;
   onToggle: () => void;
   onSetTheme: (theme: 'light' | 'dark') => void;
   onAssetUploaded: (asset: ComponentAsset) => void;
+  onDelete: () => void;
 }) {
   const [live, setLive] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
@@ -94,6 +96,15 @@ export function ComponentCard({
           aria-label={`select ${component.name}`}
         >
           ✓
+        </button>
+
+        <button
+          className="card-delete"
+          onClick={onDelete}
+          aria-label={`delete ${component.name}`}
+          title="Delete from vault"
+        >
+          🗑
         </button>
       </div>
 

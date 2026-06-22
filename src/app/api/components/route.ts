@@ -6,6 +6,7 @@ import {
   saveComponent,
   listComponents,
   updateShowcaseTheme,
+  deleteComponent,
 } from '@/adapters/supabase/vaultRepository';
 
 export const runtime = 'nodejs';
@@ -21,6 +22,25 @@ export async function GET() {
   } catch (e) {
     return NextResponse.json(
       { error: 'list_failed', detail: (e as Error).message },
+      { status: 500 },
+    );
+  }
+}
+
+// DELETE /api/components?id=… — remove a component from the vault.
+export async function DELETE(request: Request) {
+  const userId = await getCurrentUserId();
+  if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  const id = new URL(request.url).searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
+
+  try {
+    await deleteComponent(id, userId);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json(
+      { error: 'delete_failed', detail: (e as Error).message },
       { status: 500 },
     );
   }

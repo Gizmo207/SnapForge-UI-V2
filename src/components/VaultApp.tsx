@@ -45,6 +45,13 @@ export function VaultApp({
   const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  function flash(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 3200);
+  }
 
   // Categories (by subcategory) with counts, ordered canonically — the sidebar
   // groups the vault so cards and toggles aren't jumbled on one page.
@@ -130,21 +137,53 @@ export function VaultApp({
     });
   }
 
-  async function exportSelected() {
-    if (selected.size === 0) return;
-    const res = await fetch('/api/export', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: Array.from(selected) }),
+  async function removeComponent(id: string, name: string) {
+    if (!window.confirm(`Delete “${name}” from your vault? This can’t be undone.`)) return;
+    // Optimistic: drop it immediately, restore on failure.
+    const snapshot = components;
+    setComponents((prev) => prev.filter((c) => c.componentId !== id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
     });
-    if (!res.ok) return;
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'snapforge-export.zip';
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const res = await fetch(`/api/components?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      flash(`Deleted “${name}”`);
+    } catch {
+      setComponents(snapshot);
+      flash('Delete failed — restored');
+    }
+  }
+
+  async function exportSelected() {
+    if (selected.size === 0 || exporting) return;
+    setExporting(true);
+    try {
+      const res = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        flash(body.detail || body.error || 'Export failed');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'snapforge-export.zip';
+      a.click();
+      URL.revokeObjectURL(url);
+      flash(`Exported ${selected.size} component${selected.size === 1 ? '' : 's'} ↓`);
+    } catch (e) {
+      flash((e as Error).message || 'Export failed');
+    } finally {
+      setExporting(false);
+    }
   }
 
   const displayName = viewer?.name || viewer?.email || null;
@@ -174,11 +213,11 @@ export function VaultApp({
         </button>
         <button
           className="btn"
-          disabled={selected.size === 0}
+          disabled={selected.size === 0 || exporting}
           onClick={exportSelected}
           title={selected.size ? `Export ${selected.size} selected` : 'Select components to export'}
         >
-          ⬇ Export{selected.size ? ` (${selected.size})` : ''}
+          {exporting ? '⏳ Bundling…' : `⬇ Export${selected.size ? ` (${selected.size})` : ''}`}
         </button>
         <div className="usermenu">
           <button
@@ -235,6 +274,7 @@ export function VaultApp({
                   onToggle={() => toggle(c.componentId)}
                   onSetTheme={(theme) => setTheme(c.componentId, theme)}
                   onAssetUploaded={(asset) => applyAsset(c.componentId, asset)}
+                  onDelete={() => removeComponent(c.componentId, c.name)}
                 />
               ))}
             </div>
@@ -271,6 +311,12 @@ export function VaultApp({
           }}
           onSubmit={addSnippet}
         />
+      )}
+
+      {toast && (
+        <div className="toast" role="status">
+          {toast}
+        </div>
       )}
     </>
   );

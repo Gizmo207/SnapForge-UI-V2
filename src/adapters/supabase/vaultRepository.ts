@@ -117,6 +117,24 @@ export async function listComponents(ownerId: string): Promise<Component[]> {
   return attachAssets((data as Row[]).map(toComponent));
 }
 
+/** Removes a component (and its asset rows) the owner controls. Idempotent. */
+export async function deleteComponent(componentId: string, ownerId: string): Promise<void> {
+  const supabase = getSupabaseServerClient();
+  const { error } = await supabase
+    .from('components')
+    .delete()
+    .eq('component_id', componentId)
+    .eq('owner_id', ownerId);
+  if (error) throw new Error(`deleteComponent failed: ${error.message}`);
+  // Asset rows are owner-scoped and keyed by component; clear them too. Storage
+  // objects are left to be swept later — orphaned public files are harmless.
+  await supabase
+    .from('component_assets')
+    .delete()
+    .eq('component_id', componentId)
+    .eq('owner_id', ownerId);
+}
+
 export async function addComponentAsset(params: {
   componentId: string;
   ownerId: string;
