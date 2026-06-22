@@ -6,8 +6,10 @@ import {
   saveComponent,
   listComponents,
   updateShowcaseTheme,
+  updateBackdrop,
   deleteComponent,
 } from '@/adapters/supabase/vaultRepository';
+import { BACKDROP_ORDER } from '@/components/showcase';
 
 export const runtime = 'nodejs';
 
@@ -46,27 +48,37 @@ export async function DELETE(request: Request) {
   }
 }
 
-// PATCH /api/components — update a component's per-card showcase theme.
+// PATCH /api/components — update a component's per-card showcase theme or backdrop.
 export async function PATCH(request: Request) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  let body: { id?: unknown; showcaseTheme?: unknown };
+  let body: { id?: unknown; showcaseTheme?: unknown; backdrop?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 });
   }
 
-  const { id, showcaseTheme } = body;
+  const { id } = body;
   if (typeof id !== 'string' || id.length === 0) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 });
   }
-  if (showcaseTheme !== 'light' && showcaseTheme !== 'dark' && showcaseTheme !== null) {
-    return NextResponse.json({ error: 'showcaseTheme must be "light", "dark", or null' }, { status: 400 });
-  }
 
   try {
+    if ('backdrop' in body) {
+      const { backdrop } = body;
+      if (backdrop !== null && !BACKDROP_ORDER.includes(backdrop as (typeof BACKDROP_ORDER)[number])) {
+        return NextResponse.json({ error: 'invalid backdrop' }, { status: 400 });
+      }
+      const component = await updateBackdrop(id, userId, backdrop as (typeof BACKDROP_ORDER)[number] | null);
+      return NextResponse.json({ component });
+    }
+
+    const { showcaseTheme } = body;
+    if (showcaseTheme !== 'light' && showcaseTheme !== 'dark' && showcaseTheme !== null) {
+      return NextResponse.json({ error: 'showcaseTheme must be "light", "dark", or null' }, { status: 400 });
+    }
     const component = await updateShowcaseTheme(id, userId, showcaseTheme);
     return NextResponse.json({ component });
   } catch (e) {

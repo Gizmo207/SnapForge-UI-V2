@@ -1,6 +1,43 @@
-import type { Component } from '@/domains/shared/component';
+import type { Component, BackdropId } from '@/domains/shared/component';
 
 export type Showcase = { theme: 'light' | 'dark'; bg: string; fg: string };
+
+/**
+ * Preview backdrops the user can drop behind a component so overlay/glass
+ * components have something to refract. Each maps to a CSS `background` value
+ * painted on the stage (the `<html>` canvas), which the component renders over.
+ * `mono`/`mesh` are tasteful gradients; `grid`/`dots` are bold patterns whose
+ * hard edges make a glass lens's distortion obvious. Order = the cycle order.
+ */
+export const BACKDROP_ORDER: BackdropId[] = ['mono', 'mesh', 'grid', 'dots', 'dark'];
+
+const BACKDROP_CSS: Record<BackdropId, string> = {
+  mono:
+    'radial-gradient(at 18% 22%, #4a4a4a 0, transparent 50%),' +
+    'radial-gradient(at 82% 28%, #5e5e5e 0, transparent 50%),' +
+    'radial-gradient(at 50% 85%, #2b2b2b 0, transparent 55%), #1b1b1d',
+  mesh:
+    'radial-gradient(at 15% 20%, #6d28d9 0, transparent 50%),' +
+    'radial-gradient(at 82% 25%, #db2777 0, transparent 50%),' +
+    'radial-gradient(at 50% 88%, #2563eb 0, transparent 55%), #0b0b14',
+  grid:
+    'linear-gradient(#ffffff1f 1px, transparent 1px) 0 0/22px 22px,' +
+    'linear-gradient(90deg, #ffffff1f 1px, transparent 1px) 0 0/22px 22px, #16161c',
+  dots: 'radial-gradient(#ffffff26 1.5px, transparent 1.7px) 0 0/18px 18px, #15151b',
+  dark: '#0b0b0e',
+};
+
+/** The CSS `background` for a backdrop, or null for the plain stage. */
+export function backdropCss(id: BackdropId | null | undefined): string | null {
+  return id ? BACKDROP_CSS[id] : null;
+}
+
+/** The next backdrop in the cycle (… → last → null/plain → first → …). */
+export function nextBackdrop(current: BackdropId | null | undefined): BackdropId | null {
+  if (!current) return BACKDROP_ORDER[0];
+  const i = BACKDROP_ORDER.indexOf(current);
+  return i === -1 || i === BACKDROP_ORDER.length - 1 ? null : BACKDROP_ORDER[i + 1];
+}
 
 // Backgrounds sit a step *off* the near-black page so the card visibly floats,
 // the way uiverse's cards do (dark ≈ a lifted charcoal, light ≈ soft grey).

@@ -235,7 +235,7 @@ a { color: inherit; text-decoration: none; }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
 /* Per-card showcase background toggle (light/dark), appears on hover. */
-.theme-toggle {
+.theme-toggle, .backdrop-toggle {
   position: absolute; top: 10px; left: 10px;
   width: 32px; height: 32px; border-radius: 10px; cursor: pointer;
   background: rgba(8,8,12,.46); backdrop-filter: blur(8px);
@@ -243,8 +243,8 @@ a { color: inherit; text-decoration: none; }
   display: grid; place-items: center; font-size: 16px; line-height: 1;
   opacity: 0; transition: opacity .14s ease, transform .14s ease;
 }
-.card:hover .theme-toggle { opacity: .92; }
-.theme-toggle:hover { transform: scale(1.08); opacity: 1; }
+.card:hover .theme-toggle, .card:hover .backdrop-toggle { opacity: .92; }
+.theme-toggle:hover, .backdrop-toggle:hover { transform: scale(1.08); opacity: 1; }
 
 /* Meta lives below the rectangle, on the page background — no border. */
 .card-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 4px 0; }

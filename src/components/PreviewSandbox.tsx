@@ -2,7 +2,7 @@
 
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
-import { pickShowcase, usesTailwind, fillsStage } from './showcase';
+import { pickShowcase, usesTailwind, fillsStage, backdropCss } from './showcase';
 import { buildDemoApp } from '@/domains/preview/pure/demoWrapper';
 
 const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
@@ -32,6 +32,11 @@ export function PreviewSandbox({ component }: { component: Component }) {
     artifact = artifact.split(asset.refPath).join(asset.url);
   }
   const sc = pickShowcase(component);
+  // A user-chosen backdrop replaces the plain stage color so glass/overlay
+  // components have something to refract. All backdrops are dark, so pair them
+  // with light text for legibility.
+  const stageBg = backdropCss(component.backdrop) ?? sc.bg;
+  const stageFg = component.backdrop ? '#f3f3f7' : sc.fg;
   // R3F scenes paint their own background and fill their parent; let them fill
   // the stage instead of floating as a small scaled box in dead space.
   const fill = fillsStage(component);
@@ -44,7 +49,7 @@ export function PreviewSandbox({ component }: { component: Component }) {
     const twTag = tailwind ? `<script src="${TAILWIND_CDN}"></script>` : '';
     const srcDoc = `<!doctype html><html><head><meta charset="utf-8"/>${twTag}<style>
       ${NO_SCROLL}
-      html{background:${sc.bg};color:${sc.fg}}
+      html{background:${stageBg};color:${stageFg}}
       body{display:grid;place-items:center;padding:16px;
         font-family:Inter,system-ui,-apple-system,sans-serif}
     </style></head><body>${artifact}</body></html>`;
@@ -53,7 +58,7 @@ export function PreviewSandbox({ component }: { component: Component }) {
         title={component.name}
         sandbox=""
         srcDoc={srcDoc}
-        style={{ width: '100%', height: '100%', border: 0, background: sc.bg }}
+        style={{ width: '100%', height: '100%', border: 0, background: stageBg }}
       />
     );
   }
@@ -82,7 +87,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 ${twInject}${cssInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
-  html{background:${sc.bg};color:${sc.fg}}
+  html{background:${stageBg};color:${stageFg}}
   body{margin:0;width:100vw;height:100vh;overflow:hidden}
   #root{display:contents}\`;
 document.head.appendChild(s);

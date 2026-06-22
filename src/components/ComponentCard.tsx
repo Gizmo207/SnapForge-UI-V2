@@ -1,17 +1,25 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Component, ComponentAsset } from '@/domains/shared/component';
+import type { BackdropId, Component, ComponentAsset } from '@/domains/shared/component';
 import { detectAssets } from '@/domains/ingestion/pure/detectAssets';
 import { PreviewSandbox } from './PreviewSandbox';
 import { AssetsModal } from './AssetsModal';
-import { pickShowcase, showcaseHeight, worksOnBoth, needsInteractionHint } from './showcase';
+import {
+  pickShowcase,
+  showcaseHeight,
+  worksOnBoth,
+  needsInteractionHint,
+  backdropCss,
+  nextBackdrop,
+} from './showcase';
 
 export function ComponentCard({
   component,
   selected,
   onToggle,
   onSetTheme,
+  onSetBackdrop,
   onAssetUploaded,
   onDelete,
 }: {
@@ -19,6 +27,7 @@ export function ComponentCard({
   selected: boolean;
   onToggle: () => void;
   onSetTheme: (theme: 'light' | 'dark') => void;
+  onSetBackdrop: (backdrop: BackdropId | null) => void;
   onAssetUploaded: (asset: ComponentAsset) => void;
   onDelete: () => void;
 }) {
@@ -66,7 +75,7 @@ export function ComponentCard({
       <div
         ref={stageRef}
         className="showcase"
-        style={{ background: sc.bg, height: showcaseHeight(component) }}
+        style={{ background: backdropCss(component.backdrop) ?? sc.bg, height: showcaseHeight(component) }}
       >
         {!allowed ? (
           <div className="stage-blocked">🔒 blocked by gate</div>
@@ -97,6 +106,18 @@ export function ComponentCard({
             title="Toggle showcase background"
           >
             {sc.theme === 'dark' ? '☀' : '☾'}
+          </button>
+        )}
+
+        {allowed && (
+          <button
+            className="backdrop-toggle"
+            style={{ left: canToggle ? 50 : 10 }}
+            onClick={() => onSetBackdrop(nextBackdrop(component.backdrop))}
+            aria-label="cycle preview backdrop"
+            title={`Backdrop: ${component.backdrop ?? 'none'} — click to cycle (for glass/overlay components)`}
+          >
+            ▦
           </button>
         )}
 

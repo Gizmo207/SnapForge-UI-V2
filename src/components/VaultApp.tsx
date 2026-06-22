@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { signOut } from 'next-auth/react';
-import type { Component } from '@/domains/shared/component';
+import type { BackdropId, Component } from '@/domains/shared/component';
 import type { ViewerProfile } from '@/adapters/auth/session';
 import { ComponentCard } from './ComponentCard';
 import { PasteModal } from './PasteModal';
@@ -123,6 +123,22 @@ export function VaultApp({
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, showcaseTheme: theme }),
+      });
+    } catch {
+      /* keep the optimistic state; it re-syncs on next load */
+    }
+  }
+
+  async function setBackdrop(id: string, backdrop: BackdropId | null) {
+    // Optimistic: drop the backdrop instantly, then persist.
+    setComponents((prev) =>
+      prev.map((c) => (c.componentId === id ? { ...c, backdrop } : c)),
+    );
+    try {
+      await fetch('/api/components', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, backdrop }),
       });
     } catch {
       /* keep the optimistic state; it re-syncs on next load */
@@ -283,6 +299,7 @@ export function VaultApp({
                   selected={selected.has(c.componentId)}
                   onToggle={() => toggle(c.componentId)}
                   onSetTheme={(theme) => setTheme(c.componentId, theme)}
+                  onSetBackdrop={(backdrop) => setBackdrop(c.componentId, backdrop)}
                   onAssetUploaded={(asset) => applyAsset(c.componentId, asset)}
                   onDelete={() => setConfirmDel({ id: c.componentId, name: c.name })}
                 />

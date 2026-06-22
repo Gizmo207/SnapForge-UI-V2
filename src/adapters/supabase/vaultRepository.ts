@@ -1,4 +1,4 @@
-import type { Component, ComponentAsset } from '../../domains/shared/component';
+import type { BackdropId, Component, ComponentAsset } from '../../domains/shared/component';
 import type { Framework } from '../../domains/ingestion/pure/detectFramework';
 import type { SanitizationOutcome } from '../../domains/sanitization/pure/types';
 import { getSupabaseServerClient } from './client';
@@ -22,6 +22,7 @@ type Row = {
   tags: string[];
   dependencies: string[];
   showcase_theme: 'light' | 'dark' | null;
+  backdrop: BackdropId | null;
   html_source: string | null;
   css_source: string | null;
   demo_source: string | null;
@@ -42,6 +43,7 @@ function toComponent(row: Row): Component {
     tags: row.tags ?? [],
     dependencies: row.dependencies ?? [],
     showcaseTheme: row.showcase_theme ?? null,
+    backdrop: row.backdrop ?? null,
     htmlSource: row.html_source,
     cssSource: row.css_source,
     demoSource: row.demo_source,
@@ -64,6 +66,7 @@ function toRow(component: Component, ownerId: string): Row {
     tags: component.tags,
     dependencies: component.dependencies,
     showcase_theme: component.showcaseTheme ?? null,
+    backdrop: component.backdrop ?? null,
     html_source: component.htmlSource ?? null,
     css_source: component.cssSource ?? null,
     demo_source: component.demoSource ?? null,
@@ -192,6 +195,23 @@ export async function updateShowcaseTheme(
     .select()
     .single();
   if (error) throw new Error(`updateShowcaseTheme failed: ${error.message}`);
+  return toComponent(data as Row);
+}
+
+export async function updateBackdrop(
+  componentId: string,
+  ownerId: string,
+  backdrop: BackdropId | null,
+): Promise<Component> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('components')
+    .update({ backdrop })
+    .eq('component_id', componentId)
+    .eq('owner_id', ownerId)
+    .select()
+    .single();
+  if (error) throw new Error(`updateBackdrop failed: ${error.message}`);
   return toComponent(data as Row);
 }
 
