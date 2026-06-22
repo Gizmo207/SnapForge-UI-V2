@@ -1,5 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { usesTailwind, worksOnBoth } from './showcase';
+import { usesTailwind, worksOnBoth, usesPrivateClassSyntax } from './showcase';
+
+describe('usesPrivateClassSyntax', () => {
+  it('detects private methods, fields, and this.# access', () => {
+    expect(usesPrivateClassSyntax('class A { #project(pos) { return pos; } }')).toBe(true);
+    expect(usesPrivateClassSyntax('class A { #count = 0; }')).toBe(true);
+    expect(usesPrivateClassSyntax('this.#init();')).toBe(true);
+  });
+
+  it('does not trigger on CSS hex colors in strings', () => {
+    expect(usesPrivateClassSyntax("const g = 'linear-gradient(145deg,#60496e8c 0%,#71C4FF44 100%)';")).toBe(false);
+    expect(usesPrivateClassSyntax("const c = '#fff'; const d = '#abcdef';")).toBe(false);
+  });
+});
 
 describe('worksOnBoth (theme lock)', () => {
   it('true when the component paints an opaque container backdrop', () => {

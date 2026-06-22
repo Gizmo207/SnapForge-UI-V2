@@ -2,7 +2,7 @@
 
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
-import { pickShowcase, usesTailwind, fillsStage, backdropCss } from './showcase';
+import { pickShowcase, usesTailwind, fillsStage, backdropCss, usesPrivateClassSyntax } from './showcase';
 import { buildDemoApp } from '@/domains/preview/pure/demoWrapper';
 
 const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
@@ -159,6 +159,26 @@ window.addEventListener('resize', fit);
   const files: Record<string, string> = demoApp
     ? { '/Component.tsx': artifact, '/App.tsx': demoApp, '/index.tsx': entry }
     : { '/App.tsx': artifact, '/index.tsx': entry };
+
+  // Components written with ES2022 class private members (`#method()`, `#field`)
+  // — common in self-contained WebGL/canvas widgets — fail Sandpack's default
+  // Babel transform ("Class private methods are not enabled"). Enable the
+  // private-syntax plugins via a .babelrc only when that syntax is present, so
+  // ordinary components keep the lean default toolchain.
+  if (usesPrivateClassSyntax(artifact) || (demoSrc != null && usesPrivateClassSyntax(demoSrc))) {
+    files['/.babelrc'] = JSON.stringify({
+      plugins: [
+        '@babel/plugin-proposal-private-methods',
+        '@babel/plugin-proposal-class-properties',
+        '@babel/plugin-proposal-private-property-in-object',
+      ],
+    });
+    Object.assign(dependencies, {
+      '@babel/plugin-proposal-private-methods': 'latest',
+      '@babel/plugin-proposal-class-properties': 'latest',
+      '@babel/plugin-proposal-private-property-in-object': 'latest',
+    });
+  }
 
   return (
     <SandpackProvider

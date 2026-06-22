@@ -109,6 +109,19 @@ export function usesTailwind(code: string): boolean {
 }
 
 /**
+ * Whether the code uses ES2022 class private members (`#method()`, `#field`,
+ * `this.#x`). Sandpack's default Babel transform rejects these unless the
+ * private-syntax plugins are enabled, so the preview needs a `.babelrc` when this
+ * is true. Matched narrowly (a `#name` followed by `(`, `=`, or `;`, or a
+ * `this.#` access) so CSS hex colors like `#60496e8c` in template strings don't
+ * trigger it. Over-detection would only add unused plugins, so it errs toward
+ * matching.
+ */
+export function usesPrivateClassSyntax(code: string): boolean {
+  return /this\.#[A-Za-z_]|#[A-Za-z_]\w*\s*(?:\(|=[^=]|;)/.test(code);
+}
+
+/**
  * Whether a component looks good on EITHER background — true when it paints its
  * own opaque backdrop (a real container background, not a tiny `:before` accent
  * or a translucent fill). Such components are theme-agnostic, so the light/dark
