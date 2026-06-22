@@ -24,6 +24,7 @@ type Row = {
   showcase_theme: 'light' | 'dark' | null;
   html_source: string | null;
   css_source: string | null;
+  demo_source: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -43,6 +44,7 @@ function toComponent(row: Row): Component {
     showcaseTheme: row.showcase_theme ?? null,
     htmlSource: row.html_source,
     cssSource: row.css_source,
+    demoSource: row.demo_source,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -64,6 +66,7 @@ function toRow(component: Component, ownerId: string): Row {
     showcase_theme: component.showcaseTheme ?? null,
     html_source: component.htmlSource ?? null,
     css_source: component.cssSource ?? null,
+    demo_source: component.demoSource ?? null,
     created_at: component.createdAt,
     updated_at: component.updatedAt,
   };

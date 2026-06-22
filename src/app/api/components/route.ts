@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  let body: { source?: unknown; css?: unknown };
+  let body: { source?: unknown; css?: unknown; demo?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -93,6 +93,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'source is required' }, { status: 400 });
   }
   const css = typeof body.css === 'string' ? body.css : undefined;
+  const demo = typeof body.demo === 'string' ? body.demo : undefined;
 
   try {
     const component = captureComponent(
@@ -102,6 +103,7 @@ export async function POST(request: Request) {
         now: () => new Date().toISOString(),
       },
       css,
+      demo,
     );
     const saved = await saveComponent(component, userId);
     return NextResponse.json({ component: saved }, { status: 201 });

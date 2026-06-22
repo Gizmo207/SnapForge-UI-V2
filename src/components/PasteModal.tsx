@@ -11,11 +11,13 @@ export function PasteModal({
   busy: boolean;
   error?: string | null;
   onClose: () => void;
-  onSubmit: (source: string, css?: string) => void;
+  onSubmit: (source: string, css?: string, demo?: string) => void;
 }) {
   const [value, setValue] = useState('');
   const [css, setCss] = useState('');
   const [showCss, setShowCss] = useState(false);
+  const [demo, setDemo] = useState('');
+  const [showDemo, setShowDemo] = useState(false);
 
   return (
     <div className="overlay" onClick={onClose}>
@@ -58,6 +60,26 @@ export function PasteModal({
             </button>
           )}
 
+          {showDemo ? (
+            <div className="css-field">
+              <label className="css-label">
+                Demo / usage{' '}
+                <span>(for wrapper components that render empty — paste the usage example)</span>
+              </label>
+              <textarea
+                className="css-textarea"
+                spellCheck={false}
+                placeholder={'<GlassSurface width={300} height={200} borderRadius={40}>\n  <h2>Glass Surface</h2>\n</GlassSurface>'}
+                value={demo}
+                onChange={(e) => setDemo(e.target.value)}
+              />
+            </div>
+          ) : (
+            <button className="link-btn" onClick={() => setShowDemo(true)}>
+              ＋ Add a usage/demo example
+            </button>
+          )}
+
           {error && (
             <p
               style={{
@@ -81,7 +103,9 @@ export function PasteModal({
           <button
             className="btn btn-primary"
             disabled={!value.trim() || busy}
-            onClick={() => onSubmit(value, css.trim() ? css : undefined)}
+            onClick={() =>
+              onSubmit(value, css.trim() ? css : undefined, demo.trim() ? demo : undefined)
+            }
           >
             {busy ? 'Adding…' : 'Add to vault'}
           </button>

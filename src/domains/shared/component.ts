@@ -28,6 +28,8 @@ export type Component = {
   showcaseTheme?: 'light' | 'dark' | null;
   /** User-uploaded files this component references; wired into the preview. */
   assets?: ComponentAsset[];
+  /** Optional usage/demo JSX so wrapper components render with real content. */
+  demoSource?: string | null;
   /** Optional secondary artifacts (e.g. an HTML variant + CSS) for export. */
   htmlSource?: string | null;
   cssSource?: string | null;

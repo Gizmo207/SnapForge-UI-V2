@@ -90,14 +90,14 @@ export function VaultApp({
     });
   }, [components, query, activeCat]);
 
-  async function addSnippet(source: string, css?: string) {
+  async function addSnippet(source: string, css?: string, demo?: string) {
     setBusy(true);
     setError(null);
     try {
       const res = await fetch('/api/components', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source, css }),
+        body: JSON.stringify({ source, css, demo }),
       });
       const body = await res.json().catch(() => ({}));
       if (res.ok) {

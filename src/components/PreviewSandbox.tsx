@@ -3,6 +3,7 @@
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
 import { pickShowcase, usesTailwind, fillsStage } from './showcase';
+import { buildDemoApp } from '@/domains/preview/pure/demoWrapper';
 
 const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
 
@@ -142,12 +143,20 @@ function fit(){
 window.addEventListener('resize', fit);
 [0,80,250,600,1200].forEach(function(t){ setTimeout(fit, t); });`;
 
+  // With a usage/demo snippet, the component moves to /Component.tsx and /App.tsx
+  // becomes the demo that imports it and renders it WITH content — so wrapper
+  // components (which render empty alone) show something real.
+  const demoApp = component.demoSource ? buildDemoApp(artifact, component.demoSource) : null;
+  const files: Record<string, string> = demoApp
+    ? { '/Component.tsx': artifact, '/App.tsx': demoApp, '/index.tsx': entry }
+    : { '/App.tsx': artifact, '/index.tsx': entry };
+
   return (
     <SandpackProvider
       template="react-ts"
       theme={sc.theme}
       customSetup={{ dependencies }}
-      files={{ '/App.tsx': artifact, '/index.tsx': entry }}
+      files={files}
       style={{ height: '100%' }}
     >
       <SandpackPreview

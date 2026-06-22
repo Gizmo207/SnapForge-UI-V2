@@ -1,5 +1,7 @@
 import { ingest } from '../domains/ingestion/pure/ingest';
 import { decideSanitization } from '../domains/sanitization/pure/sanitizationDecision';
+import { jsxGate } from '../domains/sanitization/pure/jsxGate';
+import { buildDemoApp } from '../domains/preview/pure/demoWrapper';
 import type { Component } from '../domains/shared/component';
 
 export type CaptureDeps = {
@@ -26,7 +28,12 @@ export function stripCssImports(code: string): string {
  * gate), and assembles a Component. Render/export authority lives in
  * `sanitizationOutcome` / `sanitizedArtifact`, which come straight from the gate.
  */
-export function captureComponent(source: string, deps: CaptureDeps, css?: string): Component {
+export function captureComponent(
+  source: string,
+  deps: CaptureDeps,
+  css?: string,
+  demo?: string,
+): Component {
   const ingestion = ingest(source);
   const decision = decideSanitization(source, ingestion.framework);
   const timestamp = deps.now();
@@ -38,6 +45,16 @@ export function captureComponent(source: string, deps: CaptureDeps, css?: string
     : decision.sanitizedArtifact;
 
   const cssSource = css && css.trim() ? css.trim() : null;
+
+  // A usage/demo snippet is rendered in the same sandbox, so it must clear the
+  // same gate. We probe the demo wrapped as a module; only safe demos are kept.
+  let demoSource: string | null = null;
+  if (demo && demo.trim() && artifact) {
+    const probe = buildDemoApp(artifact, demo);
+    if (probe && jsxGate(probe).outcome === 'allowed') {
+      demoSource = demo.trim();
+    }
+  }
 
   return {
     componentId: deps.id(),
@@ -51,6 +68,7 @@ export function captureComponent(source: string, deps: CaptureDeps, css?: string
     tags: ingestion.tags,
     dependencies: ingestion.dependencies,
     cssSource,
+    demoSource,
     createdAt: timestamp,
     updatedAt: timestamp,
   };
