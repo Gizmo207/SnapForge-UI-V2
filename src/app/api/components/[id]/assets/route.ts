@@ -29,11 +29,40 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const refPath = form.get('refPath');
   const file = form.get('file');
+  const urlField = form.get('url');
   if (typeof refPath !== 'string' || !refPath) {
     return NextResponse.json({ error: 'refPath is required' }, { status: 400 });
   }
+
+  // Path A: caller points us at an externally-hosted file (no upload).
+  if (typeof urlField === 'string' && urlField.trim()) {
+    const url = urlField.trim();
+    if (!/^https:\/\//i.test(url)) {
+      return NextResponse.json({ error: 'url must be https' }, { status: 400 });
+    }
+    try {
+      const asset = await addComponentAsset({
+        componentId: id,
+        ownerId: userId,
+        refPath,
+        storagePath: 'external',
+        publicUrl: url,
+        filename: decodeURIComponent(url.split('/').pop()?.split('?')[0] || 'asset'),
+        contentType: 'external',
+        size: 0,
+      });
+      return NextResponse.json({ asset }, { status: 201 });
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'link_failed', detail: (e as Error).message },
+        { status: 500 },
+      );
+    }
+  }
+
+  // Path B: an uploaded file.
   if (!(file instanceof File) || file.size === 0) {
-    return NextResponse.json({ error: 'file is required' }, { status: 400 });
+    return NextResponse.json({ error: 'file or url is required' }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: 'file exceeds 25MB limit' }, { status: 413 });
