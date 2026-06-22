@@ -34,6 +34,17 @@ export function needsInteractionHint(c: Component): boolean {
   return /mousemove|pointermove|onmousemove|onpointermove/i.test(c.source ?? '');
 }
 
+/**
+ * React-Three-Fiber scenes paint their own background and fill their parent.
+ * Scaling them to fit (as we do for fixed-size DOM components) leaves them
+ * floating in dead space; instead we let them fill the stage edge to edge.
+ * Scoped to R3F `<Canvas>` so raw-canvas effects and DOM components are
+ * unaffected.
+ */
+export function fillsStage(c: Component): boolean {
+  return /<Canvas[\s/>]|@react-three\/fiber/i.test(c.source ?? '');
+}
+
 // A Tailwind utility token, e.g. flex, bg-black, p-4, rounded-xl, hover:scale-105.
 const TW_UTILITY =
   /^(flex|grid|hidden|block|inline-flex|container|relative|absolute|fixed|sticky|bg-\S+|text-\S+|[pm][xytrbl]?-\S+|rounded(?:-\S+)?|[wh]-\S+|gap-\S+|(?:items|justify|content|self)-\S+|(?:hover|focus|active|group-hover|md|lg|xl|sm|dark):\S+|space-[xy]-\S+|font-(?:bold|semibold|medium|light)|shadow(?:-\S+)?|border(?:-\S+)?|opacity-\d+|transition(?:-\S+)?|duration-\d+|scale-\d+|translate-\S+)$/;
