@@ -57,6 +57,7 @@ export function VaultApp({
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [confirmDel, setConfirmDel] = useState<{ id: string; name: string } | null>(null);
 
   function flash(message: string) {
     setToast(message);
@@ -148,7 +149,6 @@ export function VaultApp({
   }
 
   async function removeComponent(id: string, name: string) {
-    if (!window.confirm(`Delete “${name}” from your vault? This can’t be undone.`)) return;
     // Optimistic: drop it immediately, restore on failure.
     const snapshot = components;
     setComponents((prev) => prev.filter((c) => c.componentId !== id));
@@ -284,7 +284,7 @@ export function VaultApp({
                   onToggle={() => toggle(c.componentId)}
                   onSetTheme={(theme) => setTheme(c.componentId, theme)}
                   onAssetUploaded={(asset) => applyAsset(c.componentId, asset)}
-                  onDelete={() => removeComponent(c.componentId, c.name)}
+                  onDelete={() => setConfirmDel({ id: c.componentId, name: c.name })}
                 />
               ))}
             </div>
@@ -321,6 +321,39 @@ export function VaultApp({
           }}
           onSubmit={addSnippet}
         />
+      )}
+
+      {confirmDel && (
+        <div className="overlay" onClick={() => setConfirmDel(null)}>
+          <div className="modal modal-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>Delete component?</h3>
+              <button className="icon-btn x" onClick={() => setConfirmDel(null)} aria-label="Close">
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="confirm-text">
+                Remove <strong>“{confirmDel.name}”</strong> from your vault? This can’t be undone.
+              </p>
+            </div>
+            <div className="modal-foot">
+              <button className="btn btn-ghost" onClick={() => setConfirmDel(null)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  const { id, name } = confirmDel;
+                  setConfirmDel(null);
+                  void removeComponent(id, name);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {toast && (

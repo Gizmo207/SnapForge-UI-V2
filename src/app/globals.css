@@ -301,6 +301,10 @@ label.btn.is-disabled { opacity: .5; pointer-events: none; }
 .css-label span { font-weight: 400; color: var(--text-faint); }
 .modal-body textarea.css-textarea { min-height: 140px; }
 .modal-foot { padding: 14px 20px 18px; display: flex; justify-content: flex-end; gap: 10px; }
+.modal.modal-sm { width: min(440px, 100%); }
+.confirm-text { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-dim); }
+.btn-danger { background: rgba(190,40,55,.9); color: #fff; border: 1px solid rgba(251,113,133,.5); }
+.btn-danger:hover { background: rgba(210,50,65,1); }
 
 .icon-btn { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim); cursor: pointer; }
 .icon-btn:hover { color: var(--text); border-color: var(--border-2); }
