@@ -15,36 +15,23 @@ const DARK_TAGS = /(dark|neon|glow|cyber|matrix|terminal|night|midnight|space|ga
  */
 export function showcaseHeight(c: Component): number {
   const k = `${c.category} ${c.subcategory}`.toLowerCase();
-  if (isImmersive(c) || /(background|hero|navbar|banner|scene|gallery|3d)/.test(k)) return 480;
+  // Navbars/heroes are showcase pieces and benefit from a taller stage; most
+  // everything else reads best at its natural compact size.
+  if (/(navbar|hero|banner)/.test(k)) return 420;
   if (/card/.test(k)) return 400;
   if (/form/.test(k)) return 360;
-  if (/(button|checkbox|toggle|switch|radio|loader|spinner|tooltip|input)/.test(k)) return 240;
   return 240;
 }
 
 /**
- * A "showpiece" — a full scene/background, a canvas/WebGL effect, or anything
- * carrying uploaded assets. These get a wider, full-bleed stage so they read at
- * the scale they were designed for (like React Bits' large interactive demos).
- */
-export function isImmersive(c: Component): boolean {
-  const k = `${c.category} ${c.subcategory}`.toLowerCase();
-  if (/(background|hero|navbar|banner|scene|gallery|3d)/.test(k)) return true;
-  return (
-    (c.assets?.length ?? 0) > 0 ||
-    /three|@react-three|<canvas|webgl|shader/i.test(c.source ?? '')
-  );
-}
-
-/**
- * Whether a preview needs the user to move/hover to show its effect (cursor
- * trails, pointer-reactive scenes). We show a "hover to interact" hint so an
- * idle box doesn't read as broken.
+ * Whether a preview only shows its effect once the user moves the cursor over it
+ * (cursor trails, pointer-reactive fields). Such a preview looks dead when idle,
+ * so we surface a small "move your cursor" hint. Deliberately narrow: ordinary
+ * click/hover components (buttons, checkboxes, switches) are obviously
+ * interactive and must NOT get the hint.
  */
 export function needsInteractionHint(c: Component): boolean {
-  return /mousemove|pointermove|onmousemove|onpointermove|cursor|@react-three|<canvas|webgl/i.test(
-    c.source ?? '',
-  );
+  return /mousemove|pointermove|onmousemove|onpointermove/i.test(c.source ?? '');
 }
 
 // A Tailwind utility token, e.g. flex, bg-black, p-4, rounded-xl, hover:scale-105.

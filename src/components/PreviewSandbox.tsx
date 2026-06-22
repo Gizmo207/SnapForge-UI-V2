@@ -2,7 +2,7 @@
 
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
-import { pickShowcase, usesTailwind, isImmersive } from './showcase';
+import { pickShowcase, usesTailwind } from './showcase';
 
 const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
 
@@ -31,9 +31,6 @@ export function PreviewSandbox({ component }: { component: Component }) {
     artifact = artifact.split(asset.refPath).join(asset.url);
   }
   const sc = pickShowcase(component);
-  // Showpieces (3D scenes, canvas effects, backgrounds) fill the stage edge to
-  // edge instead of being scaled down to a small centered box.
-  const fill = isImmersive(component);
   // Tailwind utility classes need the Tailwind engine running inside the
   // sandbox; inject its runtime only when the snippet actually uses utilities,
   // so self-contained components (styled-components, plain CSS) are untouched.
@@ -99,21 +96,13 @@ class PreviewBoundary extends React.Component {
 // A definite, full-tile flex box so percentage-sized components (e.g. a loader
 // whose root is width/height:100%) have a real box to fill instead of
 // collapsing to zero. We then scale the rendered child down if it overflows.
-var FILL = ${fill ? 'true' : 'false'};
 const fitEl = document.createElement('div');
-fitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:' + (FILL ? '0' : '14px') + ';box-sizing:border-box';
+fitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box';
 document.getElementById('root').appendChild(fitEl);
 createRoot(fitEl).render(React.createElement(PreviewBoundary, null, React.createElement(App)));
 function fit(){
   var child = fitEl.firstElementChild;
   if(!child) return;
-  // Showpieces fill the whole stage; no scale-to-fit, just stretch to the tile.
-  if(FILL){
-    child.style.transform = 'none';
-    child.style.width = '100%';
-    child.style.height = '100%';
-    return;
-  }
   child.style.transform = 'none';
   child.style.width = '';
   child.style.height = '';

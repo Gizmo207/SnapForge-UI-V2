@@ -5,13 +5,7 @@ import type { Component, ComponentAsset } from '@/domains/shared/component';
 import { detectAssets } from '@/domains/ingestion/pure/detectAssets';
 import { PreviewSandbox } from './PreviewSandbox';
 import { AssetsModal } from './AssetsModal';
-import {
-  pickShowcase,
-  showcaseHeight,
-  worksOnBoth,
-  isImmersive,
-  needsInteractionHint,
-} from './showcase';
+import { pickShowcase, showcaseHeight, worksOnBoth, needsInteractionHint } from './showcase';
 
 export function ComponentCard({
   component,
@@ -38,7 +32,7 @@ export function ComponentCard({
     assetRefs.includes(a.refPath),
   ).length;
   const missingCount = assetRefs.length - resolvedCount;
-  const immersive = isImmersive(component);
+  const showHint = needsInteractionHint(component);
   const sc = pickShowcase(component);
   // Only offer the light/dark toggle when both look good; otherwise the stage is
   // locked to the component's best theme so it always reads well.
@@ -68,7 +62,7 @@ export function ComponentCard({
   }, [allowed, live]);
 
   return (
-    <article className={`card${selected ? ' selected' : ''}${immersive ? ' wide' : ''}`}>
+    <article className={`card${selected ? ' selected' : ''}`}>
       <div
         ref={stageRef}
         className="showcase"
@@ -88,14 +82,7 @@ export function ComponentCard({
             </button>
           </div>
         ) : live ? (
-          <>
-            <PreviewSandbox component={component} />
-            {needsInteractionHint(component) && (
-              <div className="stage-hint" aria-hidden>
-                <span>✦ Hover to interact</span>
-              </div>
-            )}
-          </>
+          <PreviewSandbox component={component} />
         ) : (
           <div className="stage-poster" aria-hidden>
             <span className="stage-spinner" />
@@ -137,19 +124,22 @@ export function ComponentCard({
         <span className="name" title={component.name}>
           {component.name}
         </span>
-        {assetRefs.length > 0 ? (
-          <button
-            className={`asset-chip${missingCount > 0 ? ' missing' : ' ok'}`}
-            onClick={() => setAssetsOpen(true)}
-            title={missingCount > 0 ? `${missingCount} missing asset(s)` : 'Assets provided'}
-          >
-            {missingCount > 0 ? `⬆ ${missingCount} asset${missingCount > 1 ? 's' : ''}` : '✓ assets'}
-          </button>
-        ) : (
-          <span className="meta">
-            {component.framework} · {component.subcategory}
-          </span>
-        )}
+        <span className="meta-right">
+          {showHint && <span className="meta-hint" title="Move your cursor over the preview">✦ move cursor</span>}
+          {assetRefs.length > 0 ? (
+            <button
+              className={`asset-chip${missingCount > 0 ? ' missing' : ' ok'}`}
+              onClick={() => setAssetsOpen(true)}
+              title={missingCount > 0 ? `${missingCount} missing asset(s)` : 'Assets provided'}
+            >
+              {missingCount > 0 ? `⬆ ${missingCount} asset${missingCount > 1 ? 's' : ''}` : '✓ assets'}
+            </button>
+          ) : (
+            <span className="meta">
+              {component.framework} · {component.subcategory}
+            </span>
+          )}
+        </span>
       </div>
 
       {assetsOpen && (
