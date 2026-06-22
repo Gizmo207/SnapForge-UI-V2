@@ -71,6 +71,33 @@ describe('buildExportBundle', () => {
     expect(css).toContain('.hero');
   });
 
+  it('bundles provided assets under public/ and reports missing ones', () => {
+    const bundle = buildExportBundle([
+      component({
+        name: 'Fluid Glass',
+        source: "const m = '/assets/3d/lens.glb'; const n = '/assets/3d/bar.glb';",
+        sanitizedArtifact: '<Scene/>',
+        assets: [{ refPath: '/assets/3d/lens.glb', url: 'https://cdn.test/lens.glb', filename: 'lens.glb' }],
+      }),
+    ]);
+    expect(bundle.assets).toEqual([
+      { path: 'public/assets/3d/lens.glb', url: 'https://cdn.test/lens.glb' },
+    ]);
+    expect(bundle.missingAssets).toEqual([{ component: 'Fluid Glass', refPath: '/assets/3d/bar.glb' }]);
+  });
+
+  it('dedupes the same asset referenced by multiple components', () => {
+    const mk = (name: string) =>
+      component({
+        name,
+        source: "const m = '/assets/3d/lens.glb';",
+        sanitizedArtifact: '<Scene/>',
+        assets: [{ refPath: '/assets/3d/lens.glb', url: 'https://cdn.test/lens.glb', filename: 'lens.glb' }],
+      });
+    const bundle = buildExportBundle([mk('A'), mk('B')]);
+    expect(bundle.assets).toHaveLength(1);
+  });
+
   it('empty selection -> explicit empty bundle', () => {
     const bundle = buildExportBundle([]);
     expect(bundle.isEmpty).toBe(true);

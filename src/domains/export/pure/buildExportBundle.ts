@@ -1,18 +1,37 @@
 import type { Component } from '../../shared/component';
+import { detectAssets } from '../../ingestion/pure/detectAssets';
 
 export type BundleFile = {
   path: string;
   contents: string;
 };
 
+/** An asset file to fetch (server-side) and place in the zip so the export is self-contained. */
+export type BundleAsset = {
+  /** Where it lands in the zip, e.g. public/assets/3d/lens.glb. */
+  path: string;
+  /** Source to fetch the bytes from (our storage URL or a user-supplied URL). */
+  url: string;
+};
+
 export type ExportBundle = {
   files: BundleFile[];
+  /** Asset files to bundle alongside the code. */
+  assets: BundleAsset[];
+  /** Referenced asset paths the user never provided (component may not work). */
+  missingAssets: { component: string; refPath: string }[];
   /** Components excluded because they did not pass the sanitization gate. */
   excludedUnsafe: string[];
   /** Components excluded because the framework-appropriate artifact was missing. */
   missingArtifact: string[];
   isEmpty: boolean;
 };
+
+/** Maps a referenced path to its location inside the bundle's public/ folder. */
+function assetZipPath(refPath: string): string {
+  const cleaned = refPath.replace(/^\.?\//, '').replace(/^\.\.\//g, '').split('?')[0];
+  return `public/${cleaned}`;
+}
 
 function slug(component: Component): string {
   return (
@@ -39,6 +58,8 @@ export function buildExportBundle(selected: Component[]): ExportBundle {
   const excludedUnsafe: string[] = [];
   const missingArtifact: string[] = [];
   const files: BundleFile[] = [];
+  const assetsByPath = new Map<string, BundleAsset>();
+  const missingAssets: { component: string; refPath: string }[] = [];
 
   // React components -> one react.tsx each.
   const reactSections: BundleFile[] = [];
@@ -72,6 +93,20 @@ export function buildExportBundle(selected: Component[]): ExportBundle {
       const css = (component.cssSource ?? '').trim();
       if (css) cssBlocks.push(`/* ${component.name} */\n${css}`);
     }
+
+    // This component contributed; bundle the asset files it references so the
+    // export is self-contained. A referenced path with no provided file is
+    // reported as missing rather than silently producing a broken download.
+    const provided = new Map((component.assets ?? []).map((a) => [a.refPath, a.url]));
+    for (const refPath of detectAssets(component.source)) {
+      const url = provided.get(refPath);
+      if (url) {
+        const path = assetZipPath(refPath);
+        if (!assetsByPath.has(path)) assetsByPath.set(path, { path, url });
+      } else {
+        missingAssets.push({ component: component.name, refPath });
+      }
+    }
   }
 
   files.push(...reactSections);
@@ -87,8 +122,12 @@ export function buildExportBundle(selected: Component[]): ExportBundle {
     });
   }
 
+  const assets = Array.from(assetsByPath.values()).sort((a, b) => a.path.localeCompare(b.path));
+
   return {
     files,
+    assets,
+    missingAssets,
     excludedUnsafe,
     missingArtifact,
     isEmpty: files.length === 0,
