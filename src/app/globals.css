@@ -235,6 +235,9 @@ a { color: inherit; text-decoration: none; }
 .asset-url { width: 190px; padding: 5px 9px; font-size: 11.5px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
 .asset-url:focus { outline: none; border-color: var(--accent); }
 .asset-url::placeholder { color: var(--text-faint); }
+.asset-count { font-size: 11px; font-weight: 600; color: var(--text-faint); margin-left: 6px; }
+label.btn { display: inline-flex; align-items: center; cursor: pointer; }
+label.btn.is-disabled { opacity: .5; pointer-events: none; }
 .asset-file { font-size: 11.5px; color: var(--text-faint); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .btn-sm { padding: 5px 10px; font-size: 12px; }
 .asset-error { flex-basis: 100%; color: var(--bad); font-size: 11.5px; }

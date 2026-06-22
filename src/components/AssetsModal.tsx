@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Component, ComponentAsset } from '@/domains/shared/component';
 
@@ -18,41 +18,114 @@ export function AssetsModal({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const resolved = new Map((component.assets ?? []).map((a) => [a.refPath, a]));
+  // State lifted here so "Save & close" can flush every typed URL at once —
+  // users paste several and expect one button to commit them all.
+  const [saved, setSaved] = useState<Record<string, ComponentAsset>>(
+    Object.fromEntries((component.assets ?? []).map((a) => [a.refPath, a])),
+  );
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
 
-  // Portal to <body> so the modal escapes the card's hover transform (which
-  // would otherwise anchor position:fixed to the card and make it flicker).
+  async function saveOne(refPath: string, body: FormData): Promise<void> {
+    const res = await fetch(`/api/components/${component.componentId}/assets`, {
+      method: 'POST',
+      body,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setErrors((e) => ({ ...e, [refPath]: json.detail || json.error || `Failed (${res.status})` }));
+      throw new Error('save failed');
+    }
+    setErrors((e) => ({ ...e, [refPath]: '' }));
+    setSaved((s) => ({ ...s, [refPath]: json.asset }));
+    setUrls((u) => ({ ...u, [refPath]: '' }));
+    onUploaded(json.asset);
+  }
+
+  async function uploadFile(refPath: string, file: File) {
+    const body = new FormData();
+    body.append('refPath', refPath);
+    body.append('file', file);
+    setBusy(true);
+    try {
+      await saveOne(refPath, body);
+    } catch {
+      /* error surfaced per-row */
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveAndClose() {
+    const pending = refs.filter(
+      (r) => urls[r]?.trim() && saved[r]?.url !== urls[r].trim(),
+    );
+    if (pending.length === 0) {
+      onClose();
+      return;
+    }
+    setBusy(true);
+    const results = await Promise.allSettled(
+      pending.map((r) => {
+        const url = urls[r].trim();
+        if (!/^https?:\/\//i.test(url)) {
+          setErrors((e) => ({ ...e, [r]: 'Enter a full https:// URL' }));
+          return Promise.reject(new Error('bad url'));
+        }
+        const body = new FormData();
+        body.append('refPath', r);
+        body.append('url', url);
+        return saveOne(r, body);
+      }),
+    );
+    setBusy(false);
+    if (results.every((x) => x.status === 'fulfilled')) onClose();
+  }
+
   if (!mounted) return null;
 
+  const pendingCount = refs.filter((r) => urls[r]?.trim() && saved[r]?.url !== urls[r].trim()).length;
+  const savedCount = refs.filter((r) => saved[r]).length;
+
   return createPortal(
-    <div className="overlay" onClick={onClose}>
+    <div className="overlay" onClick={busy ? undefined : onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h3>Assets · {component.name}</h3>
-          <button className="icon-btn x" onClick={onClose} aria-label="Close">
+          <h3>
+            Assets · {component.name}{' '}
+            <span className="asset-count">
+              {savedCount}/{refs.length} provided
+            </span>
+          </h3>
+          <button className="icon-btn x" onClick={onClose} aria-label="Close" disabled={busy}>
             ✕
           </button>
         </div>
         <div className="modal-body">
           <p className="modal-hint" style={{ marginTop: 0 }}>
-            This component references files that aren’t in the code. Upload each one, or paste a
-            direct URL to it, and the preview will load it (up to 25&nbsp;MB each).
+            This component references files that aren’t in the code. For each one, either
+            <strong> Upload</strong> a file or paste a direct URL — then hit{' '}
+            <strong>Save &amp; close</strong>. (Up to 25&nbsp;MB each.)
           </p>
           <div className="asset-list">
             {refs.map((ref) => (
               <AssetRow
                 key={ref}
-                componentId={component.componentId}
                 refPath={ref}
-                current={resolved.get(ref) ?? null}
-                onUploaded={onUploaded}
+                saved={saved[ref] ?? null}
+                url={urls[ref] ?? ''}
+                error={errors[ref] || null}
+                disabled={busy}
+                onUrlChange={(v) => setUrls((u) => ({ ...u, [ref]: v }))}
+                onUpload={(f) => uploadFile(ref, f)}
               />
             ))}
           </div>
         </div>
         <div className="modal-foot">
-          <button className="btn btn-primary" onClick={onClose}>
-            Done
+          <button className="btn btn-primary" onClick={saveAndClose} disabled={busy}>
+            {busy ? 'Saving…' : pendingCount > 0 ? `Save & close (${pendingCount})` : 'Done'}
           </button>
         </div>
       </div>
@@ -62,99 +135,51 @@ export function AssetsModal({
 }
 
 function AssetRow({
-  componentId,
   refPath,
-  current,
-  onUploaded,
+  saved,
+  url,
+  error,
+  disabled,
+  onUrlChange,
+  onUpload,
 }: {
-  componentId: string;
   refPath: string;
-  current: ComponentAsset | null;
-  onUploaded: (asset: ComponentAsset) => void;
+  saved: ComponentAsset | null;
+  url: string;
+  error: string | null;
+  disabled: boolean;
+  onUrlChange: (value: string) => void;
+  onUpload: (file: File) => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<ComponentAsset | null>(current);
-  const [url, setUrl] = useState('');
-
-  async function send(body: FormData) {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/components/${componentId}/assets`, { method: 'POST', body });
-      const json = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setDone(json.asset);
-        setUrl('');
-        onUploaded(json.asset);
-      } else {
-        setError(json.detail || json.error || `Failed (${res.status})`);
-      }
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function uploadFile(file: File) {
-    const body = new FormData();
-    body.append('refPath', refPath);
-    body.append('file', file);
-    void send(body);
-  }
-
-  function useUrl() {
-    const trimmed = url.trim();
-    if (!trimmed) return;
-    const body = new FormData();
-    body.append('refPath', refPath);
-    body.append('url', trimmed);
-    void send(body);
-  }
-
   return (
-    <div className={`asset-row${done ? ' resolved' : ''}`}>
+    <div className={`asset-row${saved ? ' resolved' : ''}`}>
       <div className="asset-info">
-        <span className="asset-status">{done ? '✓' : '○'}</span>
+        <span className="asset-status">{saved ? '✓' : '○'}</span>
         <code className="asset-path">{refPath}</code>
-        {done && <span className="asset-file">{done.filename}</span>}
+        {saved && <span className="asset-file">{saved.filename}</span>}
       </div>
       <div className="asset-action">
         <input
-          ref={inputRef}
-          type="file"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) uploadFile(f);
-          }}
-        />
-        <input
           className="asset-url"
           type="url"
-          placeholder="or paste a direct file URL"
+          placeholder={saved ? 'replace with a URL' : 'paste a direct file URL'}
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') useUrl();
-          }}
-          disabled={busy}
+          onChange={(e) => onUrlChange(e.target.value)}
+          disabled={disabled}
         />
-        {url.trim() ? (
-          <button className="btn btn-ghost btn-sm" disabled={busy} onClick={useUrl}>
-            {busy ? '…' : 'Use URL'}
-          </button>
-        ) : (
-          <button
-            className="btn btn-ghost btn-sm"
-            disabled={busy}
-            onClick={() => inputRef.current?.click()}
-          >
-            {busy ? '…' : done ? 'Replace' : 'Upload'}
-          </button>
-        )}
+        <label className={`btn btn-ghost btn-sm${disabled ? ' is-disabled' : ''}`}>
+          {saved ? 'Replace' : 'Upload'}
+          <input
+            type="file"
+            hidden
+            disabled={disabled}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onUpload(f);
+              e.target.value = '';
+            }}
+          />
+        </label>
       </div>
       {error && <div className="asset-error">⚠ {error}</div>}
     </div>
