@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
 import { pickShowcase, usesTailwind, fillsStage, backdropCss, usesPrivateClassSyntax } from './showcase';
@@ -20,16 +21,43 @@ const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
 const NO_SCROLL = `html,body{margin:0;height:100%;overflow:hidden}*{box-sizing:border-box}
   ::-webkit-scrollbar{width:0;height:0;display:none}`;
 
-export function PreviewSandbox({ component }: { component: Component }) {
-  if (component.sanitizationOutcome !== 'allowed' || !component.sanitizedArtifact) {
-    return null;
+/**
+ * Lower ES2022 class private syntax (`#method()`, `#field`) to a form Sandpack's
+ * bundler accepts. Sandpack rejects private members outright ("Class private
+ * methods are not enabled"), and feeding it a `.babelrc` doesn't reliably enable
+ * them — so we pre-compile the offending files ourselves with Babel (lazy-loaded
+ * only when this syntax is present) and hand the bundler already-lowered code.
+ * preset-env targets a baseline that lacks private methods, forcing the lowering,
+ * while keeping ESM imports intact so the rest of the pipeline is unchanged.
+ */
+async function lowerPrivateSyntax(files: Record<string, string>): Promise<Record<string, string>> {
+  const Babel = await import('@babel/standalone');
+  const out: Record<string, string> = { ...files };
+  for (const [path, content] of Object.entries(files)) {
+    if (path === '/index.tsx') continue; // our own harness — no private syntax
+    if (!usesPrivateClassSyntax(content)) continue;
+    const res = Babel.transform(content, {
+      filename: 'file.tsx',
+      presets: [['env', { targets: { chrome: '80' } }], 'react', 'typescript'],
+    });
+    if (res.code) out[path] = res.code;
   }
+  return out;
+}
+
+export function PreviewSandbox({ component }: { component: Component }) {
+  // Pre-compiled files for components that need private-syntax lowering. Null
+  // until the (lazy) transform resolves; only used when `needsTranspile`.
+  const [prepared, setPrepared] = useState<Record<string, string> | null>(null);
+  const [prepError, setPrepError] = useState<string | null>(null);
+
+  const allowed = component.sanitizationOutcome === 'allowed' && !!component.sanitizedArtifact;
 
   // Rewrite referenced asset paths to the user's uploaded URLs so the sandbox
   // can load them (3D models, images, fonts the snippet didn't include). Assets
   // can be referenced from the component OR its demo (e.g. an avatarUrl prop), so
   // both get the substitution.
-  let artifact = component.sanitizedArtifact;
+  let artifact = component.sanitizedArtifact ?? '';
   let demoSrc = component.demoSource ?? null;
   for (const asset of component.assets ?? []) {
     artifact = artifact.split(asset.refPath).join(asset.url);
@@ -48,26 +76,11 @@ export function PreviewSandbox({ component }: { component: Component }) {
   // sandbox; inject its runtime only when the snippet actually uses utilities,
   // so self-contained components (styled-components, plain CSS) are untouched.
   const tailwind = usesTailwind(artifact);
+  const isHtml = component.framework === 'html';
 
-  if (component.framework === 'html') {
-    const twTag = tailwind ? `<script src="${TAILWIND_CDN}"></script>` : '';
-    const srcDoc = `<!doctype html><html><head><meta charset="utf-8"/>${twTag}<style>
-      ${NO_SCROLL}
-      html{background:${stageBg};color:${stageFg}}
-      body{display:grid;place-items:center;padding:16px;
-        font-family:Inter,system-ui,-apple-system,sans-serif}
-    </style></head><body>${artifact}</body></html>`;
-    return (
-      <iframe
-        title={component.name}
-        sandbox=""
-        srcDoc={srcDoc}
-        style={{ width: '100%', height: '100%', border: 0, background: stageBg }}
-      />
-    );
-  }
-
-  const dependencies = Object.fromEntries(component.dependencies.map((d) => [d, 'latest']));
+  const dependencies = isHtml
+    ? {}
+    : Object.fromEntries(component.dependencies.map((d) => [d, 'latest']));
   // Background goes on <html> ONLY (the canvas). If <body> also had a background,
   // it would paint as a normal box at z-index 0 and hide a component's
   // negative-z-index layers (glow borders, blurred shadows). With only <html>
@@ -155,29 +168,97 @@ window.addEventListener('resize', fit);
   // With a usage/demo snippet, the component moves to /Component.tsx and /App.tsx
   // becomes the demo that imports it and renders it WITH content — so wrapper
   // components (which render empty alone) show something real.
-  const demoApp = demoSrc ? buildDemoApp(artifact, demoSrc) : null;
-  const files: Record<string, string> = demoApp
-    ? { '/Component.tsx': artifact, '/App.tsx': demoApp, '/index.tsx': entry }
-    : { '/App.tsx': artifact, '/index.tsx': entry };
+  const demoApp = !isHtml && demoSrc ? buildDemoApp(artifact, demoSrc) : null;
+  const files: Record<string, string> = isHtml
+    ? {}
+    : demoApp
+      ? { '/Component.tsx': artifact, '/App.tsx': demoApp, '/index.tsx': entry }
+      : { '/App.tsx': artifact, '/index.tsx': entry };
 
   // Components written with ES2022 class private members (`#method()`, `#field`)
-  // — common in self-contained WebGL/canvas widgets — fail Sandpack's default
-  // Babel transform ("Class private methods are not enabled"). Enable the
-  // private-syntax plugins via a .babelrc only when that syntax is present, so
-  // ordinary components keep the lean default toolchain.
-  if (usesPrivateClassSyntax(artifact) || (demoSrc != null && usesPrivateClassSyntax(demoSrc))) {
-    files['/.babelrc'] = JSON.stringify({
-      plugins: [
-        '@babel/plugin-proposal-private-methods',
-        '@babel/plugin-proposal-class-properties',
-        '@babel/plugin-proposal-private-property-in-object',
-      ],
-    });
-    Object.assign(dependencies, {
-      '@babel/plugin-proposal-private-methods': 'latest',
-      '@babel/plugin-proposal-class-properties': 'latest',
-      '@babel/plugin-proposal-private-property-in-object': 'latest',
-    });
+  // — common in self-contained WebGL/canvas widgets — need pre-compilation
+  // before Sandpack can bundle them (see lowerPrivateSyntax).
+  const needsTranspile =
+    !isHtml &&
+    (usesPrivateClassSyntax(artifact) || (demoApp != null && usesPrivateClassSyntax(demoApp)));
+
+  // Re-run the lazy transform when the relevant inputs change. Keyed on file
+  // contents (cheap length+id signature) rather than object identity so it
+  // doesn't loop every render.
+  const filesKey = needsTranspile
+    ? component.componentId + ':' + Object.values(files).map((v) => v.length).join('-')
+    : '';
+  useEffect(() => {
+    if (!needsTranspile) {
+      setPrepared(null);
+      setPrepError(null);
+      return;
+    }
+    let cancelled = false;
+    setPrepared(null);
+    setPrepError(null);
+    lowerPrivateSyntax(files).then(
+      (out) => !cancelled && setPrepared(out),
+      (e) => !cancelled && setPrepError(String((e && e.message) || e)),
+    );
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filesKey, needsTranspile]);
+
+  if (!allowed) return null;
+
+  if (isHtml) {
+    const twTag = tailwind ? `<script src="${TAILWIND_CDN}"></script>` : '';
+    const srcDoc = `<!doctype html><html><head><meta charset="utf-8"/>${twTag}<style>
+      ${NO_SCROLL}
+      html{background:${stageBg};color:${stageFg}}
+      body{display:grid;place-items:center;padding:16px;
+        font-family:Inter,system-ui,-apple-system,sans-serif}
+    </style></head><body>${artifact}</body></html>`;
+    return (
+      <iframe
+        title={component.name}
+        sandbox=""
+        srcDoc={srcDoc}
+        style={{ width: '100%', height: '100%', border: 0, background: stageBg }}
+      />
+    );
+  }
+
+  if (needsTranspile && prepError) {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'grid',
+          placeItems: 'center',
+          padding: 16,
+          textAlign: 'center',
+          color: stageFg,
+          background: stageBg,
+          font: '12.5px/1.5 Inter, system-ui, sans-serif',
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 18, marginBottom: 8 }}>⚠️</div>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>Preview unavailable</div>
+          <div style={{ opacity: 0.75, wordBreak: 'break-word' }}>{prepError.slice(0, 200)}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // While the lazy Babel transform runs, hold the stage with a spinner.
+  const finalFiles = needsTranspile ? prepared : files;
+  if (!finalFiles) {
+    return (
+      <div className="stage-poster" aria-hidden style={{ background: stageBg }}>
+        <span className="stage-spinner" />
+      </div>
+    );
   }
 
   return (
@@ -185,7 +266,7 @@ window.addEventListener('resize', fit);
       template="react-ts"
       theme={sc.theme}
       customSetup={{ dependencies }}
-      files={files}
+      files={finalFiles}
       style={{ height: '100%' }}
     >
       <SandpackPreview
