@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { BackdropId, Component, ComponentAsset } from '@/domains/shared/component';
 import { detectAssets } from '@/domains/ingestion/pure/detectAssets';
 import { PreviewSandbox } from './PreviewSandbox';
@@ -36,7 +37,16 @@ export function ComponentCard({
 }) {
   const [live, setLive] = useState(false);
   const [assetsOpen, setAssetsOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
+
+  // Close the expanded preview on Escape, the expected fullscreen gesture.
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setExpanded(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [expanded]);
   const allowed = component.sanitizationOutcome === 'allowed' && !!component.sanitizedArtifact;
 
   // Assets can be referenced from the component, its stylesheet, OR its demo
@@ -136,6 +146,17 @@ export function ComponentCard({
           ✓
         </button>
 
+        {allowed && (
+          <button
+            className="expand-btn"
+            onClick={() => setExpanded(true)}
+            aria-label={`expand ${component.name} preview`}
+            title="Expand to full size"
+          >
+            ⛶
+          </button>
+        )}
+
         <button
           className="card-delete"
           onClick={onDelete}
@@ -166,22 +187,24 @@ export function ComponentCard({
             </button>
           )}
           <span className="meta">{component.framework} ·</span>
-          <select
-            className="cat-select"
-            value={component.subcategory}
-            onChange={(e) => onSetSubcategory(e.target.value)}
-            title="Move to a different category"
-            aria-label="component category"
-          >
-            {(CAT_ORDER.includes(component.subcategory)
-              ? CAT_ORDER
-              : [component.subcategory, ...CAT_ORDER]
-            ).map((slug) => (
-              <option key={slug} value={slug}>
-                {catLabel(slug)}
-              </option>
-            ))}
-          </select>
+          <span className="cat-select-wrap" title="Click to move this to another category">
+            <select
+              className="cat-select"
+              value={component.subcategory}
+              onChange={(e) => onSetSubcategory(e.target.value)}
+              aria-label="component category"
+            >
+              {(CAT_ORDER.includes(component.subcategory)
+                ? CAT_ORDER
+                : [component.subcategory, ...CAT_ORDER]
+              ).map((slug) => (
+                <option key={slug} value={slug}>
+                  {catLabel(slug)}
+                </option>
+              ))}
+            </select>
+            <span className="cat-caret" aria-hidden>▾</span>
+          </span>
         </span>
       </div>
 
@@ -193,6 +216,30 @@ export function ComponentCard({
           onUploaded={onAssetUploaded}
         />
       )}
+
+      {expanded &&
+        allowed &&
+        createPortal(
+          <div className="overlay" onClick={() => setExpanded(false)}>
+            <div className="expand-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="expand-head">
+                <span className="name" title={component.name}>
+                  {component.name}
+                </span>
+                <button className="icon-btn x" onClick={() => setExpanded(false)} aria-label="Close">
+                  ✕
+                </button>
+              </div>
+              <div
+                className="expand-stage"
+                style={{ background: backdropCss(component.backdrop) ?? sc.bg }}
+              >
+                <PreviewSandbox component={component} />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </article>
   );
 }
