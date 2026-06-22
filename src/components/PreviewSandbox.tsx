@@ -24,7 +24,12 @@ export function PreviewSandbox({ component }: { component: Component }) {
     return null;
   }
 
-  const artifact = component.sanitizedArtifact;
+  // Rewrite referenced asset paths to the user's uploaded URLs so the sandbox
+  // can load them (3D models, images, fonts the snippet didn't include).
+  let artifact = component.sanitizedArtifact;
+  for (const asset of component.assets ?? []) {
+    artifact = artifact.split(asset.refPath).join(asset.url);
+  }
   const sc = pickShowcase(component);
   // Tailwind utility classes need the Tailwind engine running inside the
   // sandbox; inject its runtime only when the snippet actually uses utilities,

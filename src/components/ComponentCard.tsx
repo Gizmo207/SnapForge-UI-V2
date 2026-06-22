@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import type { Component } from '@/domains/shared/component';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { Component, ComponentAsset } from '@/domains/shared/component';
+import { detectAssets } from '@/domains/ingestion/pure/detectAssets';
 import { PreviewSandbox } from './PreviewSandbox';
+import { AssetsModal } from './AssetsModal';
 import { pickShowcase, showcaseHeight, worksOnBoth } from './showcase';
 
 export function ComponentCard({
@@ -10,15 +12,24 @@ export function ComponentCard({
   selected,
   onToggle,
   onSetTheme,
+  onAssetUploaded,
 }: {
   component: Component;
   selected: boolean;
   onToggle: () => void;
   onSetTheme: (theme: 'light' | 'dark') => void;
+  onAssetUploaded: (asset: ComponentAsset) => void;
 }) {
   const [live, setLive] = useState(false);
+  const [assetsOpen, setAssetsOpen] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
   const allowed = component.sanitizationOutcome === 'allowed' && !!component.sanitizedArtifact;
+
+  const assetRefs = useMemo(() => detectAssets(component.source), [component.source]);
+  const resolvedCount = (component.assets ?? []).filter((a) =>
+    assetRefs.includes(a.refPath),
+  ).length;
+  const missingCount = assetRefs.length - resolvedCount;
   const sc = pickShowcase(component);
   // Only offer the light/dark toggle when both look good; otherwise the stage is
   // locked to the component's best theme so it always reads well.
@@ -90,10 +101,29 @@ export function ComponentCard({
         <span className="name" title={component.name}>
           {component.name}
         </span>
-        <span className="meta">
-          {component.framework} · {component.subcategory}
-        </span>
+        {assetRefs.length > 0 ? (
+          <button
+            className={`asset-chip${missingCount > 0 ? ' missing' : ' ok'}`}
+            onClick={() => setAssetsOpen(true)}
+            title={missingCount > 0 ? `${missingCount} missing asset(s)` : 'Assets provided'}
+          >
+            {missingCount > 0 ? `⬆ ${missingCount} asset${missingCount > 1 ? 's' : ''}` : '✓ assets'}
+          </button>
+        ) : (
+          <span className="meta">
+            {component.framework} · {component.subcategory}
+          </span>
+        )}
       </div>
+
+      {assetsOpen && (
+        <AssetsModal
+          component={component}
+          refs={assetRefs}
+          onClose={() => setAssetsOpen(false)}
+          onUploaded={onAssetUploaded}
+        />
+      )}
     </article>
   );
 }

@@ -111,6 +111,16 @@ export function VaultApp({
     }
   }
 
+  function applyAsset(id: string, asset: { refPath: string; url: string; filename: string }) {
+    setComponents((prev) =>
+      prev.map((c) => {
+        if (c.componentId !== id) return c;
+        const others = (c.assets ?? []).filter((a) => a.refPath !== asset.refPath);
+        return { ...c, assets: [...others, asset] };
+      }),
+    );
+  }
+
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -224,6 +234,7 @@ export function VaultApp({
                   selected={selected.has(c.componentId)}
                   onToggle={() => toggle(c.componentId)}
                   onSetTheme={(theme) => setTheme(c.componentId, theme)}
+                  onAssetUploaded={(asset) => applyAsset(c.componentId, asset)}
                 />
               ))}
             </div>

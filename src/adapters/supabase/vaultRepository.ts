@@ -1,4 +1,4 @@
-import type { Component } from '../../domains/shared/component';
+import type { Component, ComponentAsset } from '../../domains/shared/component';
 import type { Framework } from '../../domains/ingestion/pure/detectFramework';
 import type { SanitizationOutcome } from '../../domains/sanitization/pure/types';
 import { getSupabaseServerClient } from './client';
@@ -80,6 +80,32 @@ export async function saveComponent(component: Component, ownerId: string): Prom
   return toComponent(data as Row);
 }
 
+type AssetRow = {
+  component_id: string;
+  ref_path: string;
+  public_url: string;
+  filename: string;
+};
+
+async function attachAssets(components: Component[]): Promise<Component[]> {
+  if (components.length === 0) return components;
+  const supabase = getSupabaseServerClient();
+  const ids = components.map((c) => c.componentId);
+  const { data, error } = await supabase
+    .from('component_assets')
+    .select('component_id, ref_path, public_url, filename')
+    .in('component_id', ids);
+  if (error) return components.map((c) => ({ ...c, assets: [] }));
+
+  const byComponent = new Map<string, ComponentAsset[]>();
+  for (const row of (data ?? []) as AssetRow[]) {
+    const list = byComponent.get(row.component_id) ?? [];
+    list.push({ refPath: row.ref_path, url: row.public_url, filename: row.filename });
+    byComponent.set(row.component_id, list);
+  }
+  return components.map((c) => ({ ...c, assets: byComponent.get(c.componentId) ?? [] }));
+}
+
 export async function listComponents(ownerId: string): Promise<Component[]> {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
@@ -88,7 +114,47 @@ export async function listComponents(ownerId: string): Promise<Component[]> {
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false });
   if (error) throw new Error(`listComponents failed: ${error.message}`);
-  return (data as Row[]).map(toComponent);
+  return attachAssets((data as Row[]).map(toComponent));
+}
+
+export async function addComponentAsset(params: {
+  componentId: string;
+  ownerId: string;
+  refPath: string;
+  storagePath: string;
+  publicUrl: string;
+  filename: string;
+  contentType: string;
+  size: number;
+}): Promise<ComponentAsset> {
+  const supabase = getSupabaseServerClient();
+  const { error } = await supabase.from('component_assets').upsert(
+    {
+      component_id: params.componentId,
+      owner_id: params.ownerId,
+      ref_path: params.refPath,
+      storage_path: params.storagePath,
+      public_url: params.publicUrl,
+      filename: params.filename,
+      content_type: params.contentType,
+      size: params.size,
+    },
+    { onConflict: 'component_id,ref_path' },
+  );
+  if (error) throw new Error(`addComponentAsset failed: ${error.message}`);
+  return { refPath: params.refPath, url: params.publicUrl, filename: params.filename };
+}
+
+/** Confirms a component belongs to the owner (authorization for asset upload). */
+export async function ownsComponent(componentId: string, ownerId: string): Promise<boolean> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('components')
+    .select('component_id')
+    .eq('component_id', componentId)
+    .eq('owner_id', ownerId)
+    .maybeSingle();
+  return !error && !!data;
 }
 
 export async function updateShowcaseTheme(
@@ -117,5 +183,26 @@ export async function getComponentsByIds(ids: string[], ownerId: string): Promis
     .eq('owner_id', ownerId)
     .in('component_id', ids);
   if (error) throw new Error(`getComponentsByIds failed: ${error.message}`);
-  return (data as Row[]).map(toComponent);
+  return attachAssets((data as Row[]).map(toComponent));
+}
+
+const ASSET_BUCKET = 'component-assets';
+
+/** Uploads an asset file to storage and returns its public URL + storage path. */
+export async function uploadAssetFile(params: {
+  ownerId: string;
+  componentId: string;
+  filename: string;
+  contentType: string;
+  body: Buffer;
+}): Promise<{ storagePath: string; publicUrl: string }> {
+  const supabase = getSupabaseServerClient();
+  const safe = params.filename.replace(/[^\w.\-]+/g, '_');
+  const storagePath = `${params.ownerId}/${params.componentId}/${Date.now()}-${safe}`;
+  const { error } = await supabase.storage
+    .from(ASSET_BUCKET)
+    .upload(storagePath, params.body, { contentType: params.contentType, upsert: true });
+  if (error) throw new Error(`uploadAssetFile failed: ${error.message}`);
+  const { data } = supabase.storage.from(ASSET_BUCKET).getPublicUrl(storagePath);
+  return { storagePath, publicUrl: data.publicUrl };
 }
