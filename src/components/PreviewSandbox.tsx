@@ -68,10 +68,18 @@ tw.src = '${TAILWIND_CDN}';
 document.head.appendChild(tw);
 `
     : '';
+  // The component's sibling stylesheet (its .css file) is injected as a global
+  // style so class-based components render correctly without a file import.
+  const cssInject = component.cssSource
+    ? `const cssEl = document.createElement('style');
+cssEl.textContent = ${JSON.stringify(component.cssSource)};
+document.head.appendChild(cssEl);
+`
+    : '';
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-${twInject}const s = document.createElement('style');
+${twInject}${cssInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
   html{background:${sc.bg};color:${sc.fg}}
   body{margin:0;width:100vw;height:100vh;overflow:hidden}

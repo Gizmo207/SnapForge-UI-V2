@@ -1,7 +1,28 @@
 import { describe, it, expect } from 'vitest';
-import { captureComponent } from './captureComponent';
+import { captureComponent, stripCssImports } from './captureComponent';
 
 const deps = { id: () => 'fixed-id', now: () => '2026-06-19T00:00:00Z' };
+
+describe('multi-file capture (component + css)', () => {
+  it('strips sibling .css imports so the artifact can render in the sandbox', () => {
+    const code = `import './GlassSurface.css';\nimport { useRef } from 'react';\nexport default function G(){ return <div className="glass-surface" />; }`;
+    const c = captureComponent(code, deps, '.glass-surface { color: red; }');
+    expect(c.sanitizationOutcome).toBe('allowed');
+    expect(c.sanitizedArtifact).not.toContain(".css'");
+    expect(c.sanitizedArtifact).toContain("import { useRef }");
+    expect(c.cssSource).toBe('.glass-surface { color: red; }');
+  });
+
+  it('leaves cssSource null when no css is supplied', () => {
+    const c = captureComponent(`export default function B(){ return <button/>; }`, deps);
+    expect(c.cssSource).toBeNull();
+  });
+
+  it('stripCssImports keeps non-css imports intact', () => {
+    const out = stripCssImports(`import './a.css';\nimport x from './x';\n`);
+    expect(out).toBe(`import x from './x';\n`);
+  });
+});
 
 describe('captureComponent (orchestration)', () => {
   it('captures a safe react snippet as an allowed component with an artifact', () => {

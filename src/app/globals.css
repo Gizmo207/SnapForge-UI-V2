@@ -294,6 +294,12 @@ label.btn.is-disabled { opacity: .5; pointer-events: none; }
 }
 .modal-body textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,92,246,.16); }
 .modal-hint { color: var(--text-faint); font-size: 12.5px; margin: 10px 2px 0; }
+.link-btn { margin: 12px 0 0; padding: 0; background: none; border: 0; color: var(--accent, #c084fc); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.link-btn:hover { text-decoration: underline; }
+.css-field { margin-top: 14px; }
+.css-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-dim); margin: 0 2px 6px; }
+.css-label span { font-weight: 400; color: var(--text-faint); }
+.modal-body textarea.css-textarea { min-height: 140px; }
 .modal-foot { padding: 14px 20px 18px; display: flex; justify-content: flex-end; gap: 10px; }
 
 .icon-btn { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim); cursor: pointer; }

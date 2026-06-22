@@ -79,10 +79,15 @@ export function buildExportBundle(selected: Component[]): ExportBundle {
         missingArtifact.push(component.name);
         continue;
       }
+      const css = (component.cssSource ?? '').trim();
+      const cssImport = css ? `import './${slug(component)}.css';\n` : '';
       reactSections.push({
         path: `react/${slug(component)}.tsx`,
-        contents: `// ${component.name}\n${artifact}\n`,
+        contents: `// ${component.name}\n${cssImport}${artifact}\n`,
       });
+      if (css) {
+        reactSections.push({ path: `react/${slug(component)}.css`, contents: `${css}\n` });
+      }
     } else {
       const html = (component.htmlSource ?? component.sanitizedArtifact ?? '').trim();
       if (!html) {
