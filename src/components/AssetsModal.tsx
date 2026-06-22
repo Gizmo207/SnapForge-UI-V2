@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Component, ComponentAsset } from '@/domains/shared/component';
+import { assetLabel } from '@/domains/ingestion/pure/assetLabel';
 
 export function AssetsModal({
   component,
@@ -155,7 +156,10 @@ function AssetRow({
     <div className={`asset-row${saved ? ' resolved' : ''}`}>
       <div className="asset-info">
         <span className="asset-status">{saved ? '✓' : '○'}</span>
-        <code className="asset-path">{refPath}</code>
+        <div className="asset-text">
+          <span className="asset-label">{assetLabel(refPath)}</span>
+          <code className="asset-path">{refPath}</code>
+        </div>
         {saved && <span className="asset-file">{saved.filename}</span>}
       </div>
       <div className="asset-action">
