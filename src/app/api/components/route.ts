@@ -7,9 +7,11 @@ import {
   listComponents,
   updateShowcaseTheme,
   updateBackdrop,
+  updateSubcategory,
   deleteComponent,
 } from '@/adapters/supabase/vaultRepository';
 import { BACKDROP_ORDER } from '@/components/showcase';
+import { CAT_ORDER } from '@/components/categories';
 
 export const runtime = 'nodejs';
 
@@ -53,7 +55,7 @@ export async function PATCH(request: Request) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  let body: { id?: unknown; showcaseTheme?: unknown; backdrop?: unknown };
+  let body: { id?: unknown; showcaseTheme?: unknown; backdrop?: unknown; subcategory?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -72,6 +74,15 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: 'invalid backdrop' }, { status: 400 });
       }
       const component = await updateBackdrop(id, userId, backdrop as (typeof BACKDROP_ORDER)[number] | null);
+      return NextResponse.json({ component });
+    }
+
+    if ('subcategory' in body) {
+      const { subcategory } = body;
+      if (typeof subcategory !== 'string' || !CAT_ORDER.includes(subcategory)) {
+        return NextResponse.json({ error: 'invalid subcategory' }, { status: 400 });
+      }
+      const component = await updateSubcategory(id, userId, subcategory);
       return NextResponse.json({ component });
     }
 

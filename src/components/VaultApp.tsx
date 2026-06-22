@@ -7,26 +7,7 @@ import type { ViewerProfile } from '@/adapters/auth/session';
 import { ComponentCard } from './ComponentCard';
 import { PasteModal } from './PasteModal';
 import { Sidebar, type Cat } from './Sidebar';
-
-const CAT_ORDER = [
-  'buttons', 'checkboxes', 'toggles', 'radio-buttons', 'inputs', 'forms',
-  'cards', 'loaders', 'badges', 'tooltips', 'modals', 'dropdowns',
-  'accordions', 'tabs', 'navbars', 'sidebars', 'heroes', 'headers',
-  'footers', 'backgrounds', 'grids', 'misc',
-];
-
-const CAT_LABELS: Record<string, string> = {
-  toggles: 'Toggle switches',
-  'radio-buttons': 'Radio buttons',
-  misc: 'Other',
-};
-
-function catLabel(slug: string): string {
-  return (
-    CAT_LABELS[slug] ??
-    slug.replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())
-  );
-}
+import { CAT_ORDER, catLabel } from './categories';
 
 export function VaultApp({
   initial,
@@ -139,6 +120,23 @@ export function VaultApp({
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, backdrop }),
+      });
+    } catch {
+      /* keep the optimistic state; it re-syncs on next load */
+    }
+  }
+
+  async function setSubcategory(id: string, subcategory: string) {
+    // Optimistic: re-file the card instantly (it hops to the new category), then
+    // persist. Classification is a best guess; this lets the user correct it.
+    setComponents((prev) =>
+      prev.map((c) => (c.componentId === id ? { ...c, subcategory } : c)),
+    );
+    try {
+      await fetch('/api/components', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, subcategory }),
       });
     } catch {
       /* keep the optimistic state; it re-syncs on next load */
@@ -300,6 +298,7 @@ export function VaultApp({
                   onToggle={() => toggle(c.componentId)}
                   onSetTheme={(theme) => setTheme(c.componentId, theme)}
                   onSetBackdrop={(backdrop) => setBackdrop(c.componentId, backdrop)}
+                  onSetSubcategory={(sub) => setSubcategory(c.componentId, sub)}
                   onAssetUploaded={(asset) => applyAsset(c.componentId, asset)}
                   onDelete={() => setConfirmDel({ id: c.componentId, name: c.name })}
                 />

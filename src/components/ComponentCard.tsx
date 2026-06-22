@@ -13,6 +13,7 @@ import {
   backdropCss,
   nextBackdrop,
 } from './showcase';
+import { CAT_ORDER, catLabel } from './categories';
 
 export function ComponentCard({
   component,
@@ -20,6 +21,7 @@ export function ComponentCard({
   onToggle,
   onSetTheme,
   onSetBackdrop,
+  onSetSubcategory,
   onAssetUploaded,
   onDelete,
 }: {
@@ -28,6 +30,7 @@ export function ComponentCard({
   onToggle: () => void;
   onSetTheme: (theme: 'light' | 'dark') => void;
   onSetBackdrop: (backdrop: BackdropId | null) => void;
+  onSetSubcategory: (subcategory: string) => void;
   onAssetUploaded: (asset: ComponentAsset) => void;
   onDelete: () => void;
 }) {
@@ -36,7 +39,16 @@ export function ComponentCard({
   const stageRef = useRef<HTMLDivElement>(null);
   const allowed = component.sanitizationOutcome === 'allowed' && !!component.sanitizedArtifact;
 
-  const assetRefs = useMemo(() => detectAssets(component.source), [component.source]);
+  // Assets can be referenced from the component, its stylesheet, OR its demo
+  // (e.g. <ProfileCard avatarUrl="/path/to/avatar.jpg" />), so scan all three —
+  // otherwise prop-supplied images are never detected and never prompted for.
+  const assetRefs = useMemo(
+    () =>
+      detectAssets(
+        [component.source, component.cssSource, component.demoSource].filter(Boolean).join('\n'),
+      ),
+    [component.source, component.cssSource, component.demoSource],
+  );
   const resolvedCount = (component.assets ?? []).filter((a) =>
     assetRefs.includes(a.refPath),
   ).length;
@@ -147,7 +159,7 @@ export function ComponentCard({
         </span>
         <span className="meta-right">
           {showHint && <span className="meta-hint" title="Move your cursor over the preview">✦ move cursor</span>}
-          {assetRefs.length > 0 ? (
+          {assetRefs.length > 0 && (
             <button
               className={`asset-chip${missingCount > 0 ? ' missing' : ' ok'}`}
               onClick={() => setAssetsOpen(true)}
@@ -155,11 +167,24 @@ export function ComponentCard({
             >
               {missingCount > 0 ? `⬆ ${missingCount} asset${missingCount > 1 ? 's' : ''}` : '✓ assets'}
             </button>
-          ) : (
-            <span className="meta">
-              {component.framework} · {component.subcategory}
-            </span>
           )}
+          <span className="meta">{component.framework} ·</span>
+          <select
+            className="cat-select"
+            value={component.subcategory}
+            onChange={(e) => onSetSubcategory(e.target.value)}
+            title="Move to a different category"
+            aria-label="component category"
+          >
+            {(CAT_ORDER.includes(component.subcategory)
+              ? CAT_ORDER
+              : [component.subcategory, ...CAT_ORDER]
+            ).map((slug) => (
+              <option key={slug} value={slug}>
+                {catLabel(slug)}
+              </option>
+            ))}
+          </select>
         </span>
       </div>
 

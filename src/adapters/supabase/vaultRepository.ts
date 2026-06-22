@@ -215,6 +215,23 @@ export async function updateBackdrop(
   return toComponent(data as Row);
 }
 
+export async function updateSubcategory(
+  componentId: string,
+  ownerId: string,
+  subcategory: string,
+): Promise<Component> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('components')
+    .update({ subcategory })
+    .eq('component_id', componentId)
+    .eq('owner_id', ownerId)
+    .select()
+    .single();
+  if (error) throw new Error(`updateSubcategory failed: ${error.message}`);
+  return toComponent(data as Row);
+}
+
 export async function getComponentsByIds(ids: string[], ownerId: string): Promise<Component[]> {
   if (ids.length === 0) return [];
   const supabase = getSupabaseServerClient();

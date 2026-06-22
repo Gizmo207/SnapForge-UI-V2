@@ -26,10 +26,14 @@ export function PreviewSandbox({ component }: { component: Component }) {
   }
 
   // Rewrite referenced asset paths to the user's uploaded URLs so the sandbox
-  // can load them (3D models, images, fonts the snippet didn't include).
+  // can load them (3D models, images, fonts the snippet didn't include). Assets
+  // can be referenced from the component OR its demo (e.g. an avatarUrl prop), so
+  // both get the substitution.
   let artifact = component.sanitizedArtifact;
+  let demoSrc = component.demoSource ?? null;
   for (const asset of component.assets ?? []) {
     artifact = artifact.split(asset.refPath).join(asset.url);
+    if (demoSrc) demoSrc = demoSrc.split(asset.refPath).join(asset.url);
   }
   const sc = pickShowcase(component);
   // A user-chosen backdrop replaces the plain stage color so glass/overlay
@@ -151,7 +155,7 @@ window.addEventListener('resize', fit);
   // With a usage/demo snippet, the component moves to /Component.tsx and /App.tsx
   // becomes the demo that imports it and renders it WITH content — so wrapper
   // components (which render empty alone) show something real.
-  const demoApp = component.demoSource ? buildDemoApp(artifact, component.demoSource) : null;
+  const demoApp = demoSrc ? buildDemoApp(artifact, demoSrc) : null;
   const files: Record<string, string> = demoApp
     ? { '/Component.tsx': artifact, '/App.tsx': demoApp, '/index.tsx': entry }
     : { '/App.tsx': artifact, '/index.tsx': entry };
