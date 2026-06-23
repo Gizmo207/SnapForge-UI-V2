@@ -5,6 +5,7 @@ import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
 import { pickShowcase, usesTailwind, fillsStage, backdropCss, usesPrivateClassSyntax } from './showcase';
 import { buildDemoApp } from '@/domains/preview/pure/demoWrapper';
+import { rewriteCnImport, CN_UTIL_SOURCE, CN_SHIM_PATH } from '@/domains/preview/pure/shadcn';
 
 const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
 
@@ -185,6 +186,25 @@ window.addEventListener('resize', fit);
     : demoApp
       ? { '/Component.tsx': artifact, '/App.tsx': demoApp, '/index.tsx': entry }
       : { '/App.tsx': artifact, '/index.tsx': entry };
+
+  // shadcn / Magic UI / Aceternity components import the `cn` helper from a path
+  // alias (`@/lib/utils`) that isn't in the pasted code. Provide it as a local
+  // shim and rewrite those imports so the component resolves and renders.
+  if (!isHtml) {
+    let needsCn = false;
+    for (const key of Object.keys(files)) {
+      if (key === '/index.tsx') continue;
+      const r = rewriteCnImport(files[key]);
+      if (r.rewritten) {
+        files[key] = r.code;
+        needsCn = true;
+      }
+    }
+    if (needsCn) {
+      files[CN_SHIM_PATH] = CN_UTIL_SOURCE;
+      Object.assign(dependencies, { clsx: 'latest', 'tailwind-merge': 'latest' });
+    }
+  }
 
   // Components written with ES2022 class private members (`#method()`, `#field`)
   // — common in self-contained WebGL/canvas widgets — need pre-compilation
