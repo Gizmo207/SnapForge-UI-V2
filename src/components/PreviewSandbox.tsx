@@ -99,10 +99,21 @@ cssEl.textContent = ${JSON.stringify(component.cssSource)};
 document.head.appendChild(cssEl);
 `
     : '';
+  // WebGL/3D scenes size their drawing buffer by window.devicePixelRatio. On a
+  // hi-DPI screen in a large stage that's a huge buffer → low FPS and glitchy
+  // interaction. Cap the *reported* ratio (only for fill-stage GL components) so
+  // they render at a lighter resolution. This only affects code that reads the
+  // value to size a canvas; DOM/CSS rasterization is unchanged, so text stays
+  // crisp. Capture the real ratio once, then clamp.
+  const dprCap = fill
+    ? `var __rdpr = window.devicePixelRatio || 1;
+try { Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: function(){ return Math.min(__rdpr, 1.5); } }); } catch(e){}
+`
+    : '';
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-${twInject}${cssInject}const s = document.createElement('style');
+${dprCap}${twInject}${cssInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
   html{background:${stageBg};color:${stageFg}}
   body{margin:0;width:100vw;height:100vh;overflow:hidden}
