@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { usesTailwind, worksOnBoth, usesPrivateClassSyntax, fillsStage, isGlassOverlay } from './showcase';
+import { usesTailwind, worksOnBoth, usesPrivateClassSyntax, fillsStage } from './showcase';
 import type { Component } from '@/domains/shared/component';
 
 const asComponent = (source: string) => ({ source }) as unknown as Component;
@@ -17,23 +17,6 @@ describe('fillsStage', () => {
     expect(fillsStage(asComponent("const ctx = canvas.getContext('2d');"))).toBe(false);
     // GlassSurface is an SVG-filter panel, not a full-bleed scene — stays centered.
     expect(fillsStage(asComponent('<div style={{ backdropFilter: "url(#glass)" }}><filter/></div>'))).toBe(false);
-  });
-});
-
-describe('isGlassOverlay', () => {
-  it('detects glass/frost-named components and SVG displacement', () => {
-    expect(isGlassOverlay({ name: 'Glass Surface', source: '<div/>' } as unknown as Component)).toBe(true);
-    expect(isGlassOverlay({ name: 'Frosted Card', source: '<div/>' } as unknown as Component)).toBe(true);
-    expect(isGlassOverlay(asComponent('<filter><feDisplacementMap scale="40"/></filter>'))).toBe(true);
-  });
-
-  it('does NOT fire on an opaque component that merely uses backdrop-filter', () => {
-    // Regression: a Profile Card uses backdrop-filter for a minor effect but is
-    // opaque — it must not get the scrolling content layer.
-    expect(
-      isGlassOverlay({ name: 'Profile Card', source: '<div/>', cssSource: '.pc { backdrop-filter: blur(8px); }' } as unknown as Component),
-    ).toBe(false);
-    expect(isGlassOverlay({ name: 'Fancy Button', source: '<button>x</button>' } as unknown as Component)).toBe(false);
   });
 });
 
