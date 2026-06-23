@@ -11,12 +11,16 @@ const BUILTIN_MODULES = new Set(['react', 'react-dom', 'react/jsx-runtime']);
 
 function extractPackageName(specifier: string): string | null {
   if (specifier.startsWith('.') || specifier.startsWith('/')) return null;
+  // Path aliases that map to the project root (TS/Next/shadcn convention), NOT
+  // npm packages: `@/components/ui/x`, `~/lib/utils`. Treating these as scoped
+  // packages made Sandpack try to npm-fetch `@/registry`/`@/components` and fail.
+  if (specifier.startsWith('@/') || specifier.startsWith('~/') || specifier === '~') return null;
   if (BUILTIN_MODULES.has(specifier)) return null;
 
-  // Scoped package: @scope/name/sub -> @scope/name
+  // Scoped package: @scope/name/sub -> @scope/name (scope must be non-empty).
   if (specifier.startsWith('@')) {
     const parts = specifier.split('/');
-    return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : null;
+    return parts.length >= 2 && parts[0].length > 1 ? `${parts[0]}/${parts[1]}` : null;
   }
 
   // Regular package: name/sub -> name
