@@ -22,4 +22,15 @@ describe('classify', () => {
     const src = `const FancyButton = () => <button className="btn">Click</button>;`;
     expect(classify(src).subcategory).toBe('buttons');
   });
+
+  it('files a WebGL scene under backgrounds even when it wraps a button', () => {
+    const src = `
+      const InfiniteMenu = () => {
+        const ref = useRef();
+        useEffect(() => { const gl = ref.current.getContext('webgl2', { antialias: true }); }, []);
+        return (<div><canvas ref={ref} /><button className="action">→</button></div>);
+      };
+    `;
+    expect(classify(src).subcategory).toBe('backgrounds');
+  });
 });

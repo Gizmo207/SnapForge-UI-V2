@@ -107,7 +107,7 @@ document.head.appendChild(cssEl);
   // crisp. Capture the real ratio once, then clamp.
   const dprCap = fill
     ? `var __rdpr = window.devicePixelRatio || 1;
-try { Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: function(){ return Math.min(__rdpr, 1.5); } }); } catch(e){}
+try { Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: function(){ return Math.min(__rdpr, 1); } }); } catch(e){}
 `
     : '';
   const entry = `import React from 'react';

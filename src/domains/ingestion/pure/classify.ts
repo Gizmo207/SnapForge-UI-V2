@@ -120,6 +120,11 @@ const rules: Rule[] = [
   { pattern: /<footer/i, category: 'patterns', subcategory: 'footers', tag: 'footer', priority: 7 },
 
   // Backgrounds / decorative
+  // A real WebGL/3D scene (raw GL context, three.js, or R3F) is a decorative
+  // showcase, not a button — even when it wraps a <button> control. Narrowly
+  // matched (an actual GL context / renderer) and prioritized above the
+  // structural <button> rule (8) so these don't get mislabeled as buttons.
+  { pattern: /getContext\(\s*['"]webgl|new\s+THREE\.WebGLRenderer|@react-three\/fiber|<Canvas[\s/>]/i, category: 'patterns', subcategory: 'backgrounds', tag: 'webgl', priority: 9 },
   { pattern: /particles?/i, category: 'patterns', subcategory: 'backgrounds', tag: 'particles', priority: 7 },
   { pattern: /aurora/i, category: 'patterns', subcategory: 'backgrounds', tag: 'aurora', priority: 7 },
   { pattern: /pattern/i, category: 'patterns', subcategory: 'backgrounds', tag: 'pattern', priority: 6 },
