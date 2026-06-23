@@ -5,15 +5,18 @@ import type { Component } from '@/domains/shared/component';
 const asComponent = (source: string) => ({ source }) as unknown as Component;
 
 describe('fillsStage', () => {
-  it('fills for R3F and raw WebGL scenes', () => {
+  it('fills for R3F, raw WebGL, and OGL/three library scenes', () => {
     expect(fillsStage(asComponent('<Canvas><mesh/></Canvas>'))).toBe(true);
     expect(fillsStage(asComponent("const gl = canvas.getContext('webgl2', { antialias: true });"))).toBe(true);
     expect(fillsStage(asComponent('new THREE.WebGLRenderer({ canvas })'))).toBe(true);
+    expect(fillsStage(asComponent("import { Renderer, Program } from 'ogl';\nconst renderer = new Renderer();"))).toBe(true);
   });
 
-  it('does not fill for fixed-size DOM or 2d-canvas components', () => {
+  it('does not fill for fixed-size DOM, 2d-canvas, or SVG-filter glass components', () => {
     expect(fillsStage(asComponent('<div className="loader" />'))).toBe(false);
     expect(fillsStage(asComponent("const ctx = canvas.getContext('2d');"))).toBe(false);
+    // GlassSurface is an SVG-filter panel, not a full-bleed scene — stays centered.
+    expect(fillsStage(asComponent('<div style={{ backdropFilter: "url(#glass)" }}><filter/></div>'))).toBe(false);
   });
 });
 

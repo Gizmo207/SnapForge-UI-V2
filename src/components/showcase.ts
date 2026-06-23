@@ -52,9 +52,9 @@ const DARK_TAGS = /(dark|neon|glow|cyber|matrix|terminal|night|midnight|space|ga
  */
 export function showcaseHeight(c: Component): number {
   const k = `${c.category} ${c.subcategory}`.toLowerCase();
-  // Navbars/heroes are showcase pieces and benefit from a taller stage; most
-  // everything else reads best at its natural compact size.
-  if (/(navbar|hero|banner)/.test(k)) return 420;
+  // Navbars/heroes/backgrounds are full-bleed showcase pieces and read best on a
+  // taller stage; most everything else reads best at its natural compact size.
+  if (/(navbar|hero|banner|background)/.test(k)) return 420;
   if (/card/.test(k)) return 400;
   if (/form/.test(k)) return 360;
   return 240;
@@ -85,7 +85,11 @@ export function fillsStage(c: Component): boolean {
   return (
     /<Canvas[\s/>]|@react-three\/fiber/i.test(src) ||
     /getContext\(\s*['"]webgl2?['"]/i.test(src) ||
-    /new\s+THREE\.WebGLRenderer|WebGLRenderingContext|WebGL2RenderingContext/i.test(src)
+    /new\s+THREE\.WebGLRenderer|WebGLRenderingContext|WebGL2RenderingContext/i.test(src) ||
+    // WebGL via a library that hides the raw context: OGL (`new Renderer()`) and
+    // three.js. These render full-bleed scenes (e.g. an OGL "Lightfall" pattern)
+    // that should fill the stage, not float as a scaled box.
+    /from\s+['"]ogl['"]|new\s+Renderer\s*\(|from\s+['"]three['"]/i.test(src)
   );
 }
 
