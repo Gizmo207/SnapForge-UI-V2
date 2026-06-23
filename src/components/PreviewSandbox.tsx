@@ -5,7 +5,12 @@ import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
 import { pickShowcase, usesTailwind, fillsStage, backdropCss, usesPrivateClassSyntax } from './showcase';
 import { buildDemoApp } from '@/domains/preview/pure/demoWrapper';
-import { rewriteCnImport, CN_UTIL_SOURCE, CN_SHIM_PATH } from '@/domains/preview/pure/shadcn';
+import {
+  rewriteCnImport,
+  findUnresolvedAliasImports,
+  CN_UTIL_SOURCE,
+  CN_SHIM_PATH,
+} from '@/domains/preview/pure/shadcn';
 
 const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
 
@@ -206,6 +211,20 @@ window.addEventListener('resize', fit);
     }
   }
 
+  // After shimming `cn`, any remaining `@/…` / `~/…` import is a local file from
+  // the source project that isn't in the paste (a registry component, a sibling
+  // UI primitive). Sandpack can't resolve those and would fail cryptically, so
+  // surface a clear, actionable message instead of mounting a doomed sandbox.
+  const unresolvedAliases = isHtml
+    ? []
+    : Array.from(
+        new Set(
+          Object.entries(files)
+            .filter(([k]) => k !== '/index.tsx')
+            .flatMap(([, v]) => findUnresolvedAliasImports(v)),
+        ),
+      );
+
   // Components written with ES2022 class private members (`#method()`, `#field`)
   // — common in self-contained WebGL/canvas widgets — need pre-compilation
   // before Sandpack can bundle them (see lowerPrivateSyntax).
@@ -255,6 +274,47 @@ window.addEventListener('resize', fit);
         srcDoc={srcDoc}
         style={{ width: '100%', height: '100%', border: 0, background: stageBg }}
       />
+    );
+  }
+
+  if (unresolvedAliases.length > 0) {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'grid',
+          placeItems: 'center',
+          padding: 20,
+          textAlign: 'center',
+          color: stageFg,
+          background: stageBg,
+          font: '12.5px/1.6 Inter, system-ui, sans-serif',
+        }}
+      >
+        <div style={{ maxWidth: 360 }}>
+          <div style={{ fontSize: 20, marginBottom: 8 }}>🧩</div>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>Missing local files</div>
+          <div style={{ opacity: 0.8, marginBottom: 10 }}>
+            This code imports files from the source project that aren’t in the paste:
+          </div>
+          <div
+            style={{
+              fontFamily: 'ui-monospace, monospace',
+              fontSize: 11,
+              opacity: 0.9,
+              wordBreak: 'break-all',
+              marginBottom: 10,
+            }}
+          >
+            {unresolvedAliases.join('  ·  ')}
+          </div>
+          <div style={{ opacity: 0.7 }}>
+            Paste the component’s <strong>actual source</strong> (the library’s “Manual” install
+            tab) into the main box — not just the usage/demo snippet.
+          </div>
+        </div>
+      </div>
     );
   }
 

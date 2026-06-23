@@ -38,3 +38,20 @@ export function rewriteCnImport(code: string): { code: string; rewritten: boolea
   );
   return { code: out, rewritten };
 }
+
+/**
+ * Path-alias imports (`@/…`, `~/…`) the sandbox can't resolve — i.e. files from
+ * the source project that aren't in the paste (e.g. a registry component, a
+ * sibling UI primitive). Run this AFTER rewriteCnImport so the shimmed `cn` is
+ * already handled; anything left is a genuinely missing local file. Sandpack
+ * would otherwise try to npm-fetch these and fail cryptically, so the caller can
+ * use this to show a clear "paste the real source" message instead.
+ */
+export function findUnresolvedAliasImports(code: string): string[] {
+  const out = new Set<string>();
+  const re = /import\s+(?:[\w{}\s,*]+\s+from\s+)?['"]((?:@|~)\/[^'"]+)['"]/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(code)) !== null) out.add(m[1]);
+  return Array.from(out);
+}
+

@@ -1,5 +1,29 @@
 import { describe, it, expect } from 'vitest';
-import { rewriteCnImport, CN_UTIL_SOURCE } from './shadcn';
+import { rewriteCnImport, findUnresolvedAliasImports, CN_UTIL_SOURCE } from './shadcn';
+
+describe('findUnresolvedAliasImports', () => {
+  it('flags @/ and ~/ local imports the sandbox cannot resolve', () => {
+    const code = `
+      import { AnimatedCircularProgressBar } from "@/registry/magicui/animated-circular-progress-bar";
+      import { Button } from "~/components/ui/button";
+      import { motion } from "framer-motion";
+      import Local from "./thing";
+    `;
+    expect(findUnresolvedAliasImports(code).sort()).toEqual([
+      '@/registry/magicui/animated-circular-progress-bar',
+      '~/components/ui/button',
+    ]);
+  });
+
+  it('returns nothing for code with no alias imports', () => {
+    expect(findUnresolvedAliasImports(`import { motion } from 'framer-motion';`)).toEqual([]);
+  });
+
+  it('is empty once a cn import has been rewritten', () => {
+    const { code } = rewriteCnImport(`import { cn } from "@/lib/utils";`);
+    expect(findUnresolvedAliasImports(code)).toEqual([]);
+  });
+});
 
 describe('rewriteCnImport', () => {
   it('rewrites a cn import from an @/ alias to the local shim', () => {
