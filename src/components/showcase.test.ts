@@ -21,13 +21,18 @@ describe('fillsStage', () => {
 });
 
 describe('isGlassOverlay', () => {
-  it('detects backdrop-filter, SVG displacement, and glass-named components', () => {
-    expect(isGlassOverlay(asComponent('.panel { backdrop-filter: blur(12px); }'))).toBe(true);
-    expect(isGlassOverlay(asComponent('<filter><feDisplacementMap scale="40"/></filter>'))).toBe(true);
+  it('detects glass/frost-named components and SVG displacement', () => {
     expect(isGlassOverlay({ name: 'Glass Surface', source: '<div/>' } as unknown as Component)).toBe(true);
+    expect(isGlassOverlay({ name: 'Frosted Card', source: '<div/>' } as unknown as Component)).toBe(true);
+    expect(isGlassOverlay(asComponent('<filter><feDisplacementMap scale="40"/></filter>'))).toBe(true);
   });
 
-  it('is false for ordinary opaque components', () => {
+  it('does NOT fire on an opaque component that merely uses backdrop-filter', () => {
+    // Regression: a Profile Card uses backdrop-filter for a minor effect but is
+    // opaque — it must not get the scrolling content layer.
+    expect(
+      isGlassOverlay({ name: 'Profile Card', source: '<div/>', cssSource: '.pc { backdrop-filter: blur(8px); }' } as unknown as Component),
+    ).toBe(false);
     expect(isGlassOverlay({ name: 'Fancy Button', source: '<button>x</button>' } as unknown as Component)).toBe(false);
   });
 });

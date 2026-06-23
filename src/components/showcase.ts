@@ -142,7 +142,11 @@ export function usesPrivateClassSyntax(code: string): boolean {
  */
 export function isGlassOverlay(c: Component): boolean {
   const src = `${c.source ?? ''}\n${c.cssSource ?? ''}`;
-  return /backdrop-filter|backdropFilter|feDisplacementMap|<filter\b/i.test(src) || /glass/i.test(c.name);
+  // Strong signals only: a glass/frost-named component, or an SVG displacement
+  // filter (the distortion technique). Plain `backdrop-filter` is intentionally
+  // NOT a trigger — opaque cards (e.g. a profile card) use it for minor effects,
+  // and the scrolling content layer is meaningless behind a solid background.
+  return /\b(glass|frost(?:ed)?)\b/i.test(c.name ?? '') || /feDisplacementMap/i.test(src);
 }
 
 /**
