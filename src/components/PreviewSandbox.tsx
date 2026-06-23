@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
-import { pickShowcase, usesTailwind, fillsStage, backdropCss, usesPrivateClassSyntax } from './showcase';
+import { pickShowcase, usesTailwind, fillsStage, backdropCss, usesPrivateClassSyntax, isGlassOverlay } from './showcase';
 import { buildDemoApp } from '@/domains/preview/pure/demoWrapper';
 
 const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
@@ -110,6 +110,30 @@ document.head.appendChild(cssEl);
 try { Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: function(){ return Math.min(__rdpr, 1); } }); } catch(e){}
 `
     : '';
+  // Glass/overlay components (backdrop-filter, SVG displacement) only show their
+  // effect over MOVING content. Inject an auto-scrolling sample-content layer
+  // behind the component so the frost/refraction is visible — mirroring the
+  // source library's scroll demo — instead of a dead static stage.
+  const glass = isGlassOverlay(component);
+  const glassCss = glass
+    ? `
+  #__glassbg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;padding:22px 26px;box-sizing:border-box}
+  .__gscroll{display:flex;flex-direction:column;gap:14px;animation:__gs 16s linear infinite}
+  @keyframes __gs{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+  .__grow{display:flex;align-items:center;gap:14px;flex:none}
+  .__gdot{width:30px;height:30px;border-radius:9px;flex:none;background:linear-gradient(135deg,#a78bfa,#ec4899,#38bdf8)}
+  .__gbar{height:16px;border-radius:8px;background:rgba(255,255,255,.16)}`
+    : '';
+  const glassInject = glass
+    ? `(function(){
+  var bg=document.createElement('div'); bg.id='__glassbg'; bg.setAttribute('aria-hidden','true');
+  var wrap=document.createElement('div'); wrap.className='__gscroll';
+  var rows='';
+  for(var i=0;i<18;i++){ rows+='<div class="__grow"><span class="__gdot"></span><span class="__gbar" style="width:'+(38+(i*17)%52)+'%"></span></div>'; }
+  wrap.innerHTML=rows+rows; bg.appendChild(wrap); document.body.appendChild(bg);
+})();
+`
+    : '';
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
@@ -117,8 +141,9 @@ ${dprCap}${twInject}${cssInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
   html{background:${stageBg};color:${stageFg}}
   body{margin:0;width:100vw;height:100vh;overflow:hidden}
-  #root{display:contents}\`;
+  #root{display:contents}${glassCss}\`;
 document.head.appendChild(s);
+${glassInject}
 // An error boundary so a component that throws at runtime (e.g. a Three.js scene
 // whose external .glb asset isn't bundled with the snippet) shows a readable
 // note instead of a blank/crashed canvas.
@@ -143,7 +168,7 @@ class PreviewBoundary extends React.Component {
 // collapsing to zero. We then scale the rendered child down if it overflows.
 var FILL = ${fill ? 'true' : 'false'};
 const fitEl = document.createElement('div');
-fitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:' + (FILL ? 'stretch' : 'center') + ';justify-content:' + (FILL ? 'stretch' : 'center') + ';padding:' + (FILL ? '0' : '14px') + ';box-sizing:border-box';
+fitEl.style.cssText = 'position:fixed;inset:0;z-index:1;display:flex;align-items:' + (FILL ? 'stretch' : 'center') + ';justify-content:' + (FILL ? 'stretch' : 'center') + ';padding:' + (FILL ? '0' : '14px') + ';box-sizing:border-box';
 document.getElementById('root').appendChild(fitEl);
 createRoot(fitEl).render(React.createElement(PreviewBoundary, null, React.createElement(App)));
 function fit(){

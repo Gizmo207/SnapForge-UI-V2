@@ -133,6 +133,19 @@ export function usesPrivateClassSyntax(code: string): boolean {
 }
 
 /**
+ * Whether a component is a glass/overlay surface — it refracts or frosts whatever
+ * is painted *behind* it (CSS `backdrop-filter`, an SVG displacement filter, or a
+ * "glass" name). Such components look dead over a static stage: their whole point
+ * is distorting moving content. The preview gives these an auto-scrolling sample
+ * content layer behind them so the effect is actually visible (like the source
+ * library's scroll demo).
+ */
+export function isGlassOverlay(c: Component): boolean {
+  const src = `${c.source ?? ''}\n${c.cssSource ?? ''}`;
+  return /backdrop-filter|backdropFilter|feDisplacementMap|<filter\b/i.test(src) || /glass/i.test(c.name);
+}
+
+/**
  * Whether a component looks good on EITHER background — true when it paints its
  * own opaque backdrop (a real container background, not a tiny `:before` accent
  * or a translucent fill). Such components are theme-agnostic, so the light/dark
