@@ -3,14 +3,15 @@
 
 export const CAT_ORDER = [
   'buttons', 'checkboxes', 'toggles', 'radio-buttons', 'inputs', 'forms',
-  'cards', 'loaders', 'badges', 'tooltips', 'modals', 'dropdowns',
-  'accordions', 'tabs', 'navbars', 'sidebars', 'heroes', 'headers',
-  'footers', 'backgrounds', 'grids', 'misc',
+  'cards', 'carousels', 'avatars', 'loaders', 'badges', 'tooltips', 'modals',
+  'dropdowns', 'accordions', 'tabs', 'navbars', 'sidebars', 'heroes', 'headers',
+  'footers', 'text', 'backgrounds', 'grids', 'misc',
 ];
 
 const CAT_LABELS: Record<string, string> = {
   toggles: 'Toggle switches',
   'radio-buttons': 'Radio buttons',
+  text: 'Text effects',
   misc: 'Other',
 };
 

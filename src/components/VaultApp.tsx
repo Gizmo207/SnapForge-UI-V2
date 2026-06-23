@@ -21,6 +21,9 @@ export function VaultApp({
   const [components, setComponents] = useState<Component[]>(initial);
   const [query, setQuery] = useState('');
   const [activeCat, setActiveCat] = useState('all');
+  // Tags are cross-cutting attributes (animated, 3d, glass…) — a filter, not a
+  // section. Selecting one narrows the current view; switching category clears it.
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   // Keep the selected category across reloads — refreshing while viewing Navbars
   // should land back on Navbars, not reset to the full vault.
@@ -59,7 +62,9 @@ export function VaultApp({
       });
   }, [components]);
 
-  const filtered = useMemo(() => {
+  // Category + search filter (before the tag filter), so the tag chips reflect
+  // what's actually in the current view.
+  const byCatQuery = useMemo(() => {
     const q = query.trim().toLowerCase();
     return components.filter((c) => {
       if (activeCat !== 'all' && c.subcategory !== activeCat) return false;
@@ -70,6 +75,27 @@ export function VaultApp({
         .includes(q);
     });
   }, [components, query, activeCat]);
+
+  // Most common tags in the current view, as toggle chips.
+  const tagBar = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of byCatQuery) for (const t of c.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 14)
+      .map(([tag, count]) => ({ tag, count }));
+  }, [byCatQuery]);
+
+  // Drop the active tag if it isn't present in the current view (e.g. after
+  // switching category), so we never show an empty grid for a stale filter.
+  useEffect(() => {
+    if (activeTag && !tagBar.some((t) => t.tag === activeTag)) setActiveTag(null);
+  }, [tagBar, activeTag]);
+
+  const filtered = useMemo(
+    () => (activeTag ? byCatQuery.filter((c) => c.tags.includes(activeTag)) : byCatQuery),
+    [byCatQuery, activeTag],
+  );
 
   async function addSnippet(source: string, css?: string, demo?: string) {
     setBusy(true);
@@ -284,9 +310,30 @@ export function VaultApp({
             <h2>{activeCat === 'all' ? 'Your vault' : catLabel(activeCat)}</h2>
             <span className="count">
               {filtered.length} component{filtered.length === 1 ? '' : 's'}
-              {query && ` · filtered`}
+              {(query || activeTag) && ` · filtered`}
             </span>
           </div>
+
+          {tagBar.length > 1 && (
+            <div className="tagbar" role="group" aria-label="Filter by tag">
+              <button
+                className={`tagchip${activeTag === null ? ' on' : ''}`}
+                onClick={() => setActiveTag(null)}
+              >
+                All
+              </button>
+              {tagBar.map(({ tag, count }) => (
+                <button
+                  key={tag}
+                  className={`tagchip${activeTag === tag ? ' on' : ''}`}
+                  onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                >
+                  {tag}
+                  <span className="tagchip-n">{count}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {filtered.length > 0 ? (
             <div className="grid">

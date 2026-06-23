@@ -28,6 +28,10 @@ const rules: Rule[] = [
   // (CTA), an <img>, etc. — author intent outranks inner primitive structure,
   // otherwise composite components get filed under whatever element they contain.
   { pattern: (c) => /(?:function|const|class)\s+[A-Za-z0-9_]*Card[A-Za-z0-9_]*/i.test(c), category: 'components', subcategory: 'cards', tag: 'card', priority: 23 },
+  // Text effects (split/gradient/shiny/typewriter text, etc.) — React Bits' whole
+  // "Text Animations" section. Author intent: a component named `...Text` is a
+  // text effect, not whatever element it renders.
+  { pattern: (c) => /(?:function|const|class)\s+[A-Za-z0-9_]*Text\b/.test(c), category: 'patterns', subcategory: 'text', tag: 'text', priority: 22 },
 
   // Structural detection (high priority)
   { pattern: (c) => /<form/i.test(c) && /<input/i.test(c), category: 'patterns', subcategory: 'forms', tag: 'form', priority: 20 },
@@ -83,6 +87,17 @@ const rules: Rule[] = [
   { pattern: /card/i, category: 'components', subcategory: 'cards', tag: 'card', priority: 7 },
   { pattern: /tile/i, category: 'components', subcategory: 'cards', tag: 'card', priority: 5 },
   { pattern: /panel/i, category: 'components', subcategory: 'cards', tag: 'card', priority: 4 },
+
+  // Carousels / galleries / sliders (image sliders, not range inputs)
+  { pattern: /carousel|swiper/i, category: 'components', subcategory: 'carousels', tag: 'carousel', priority: 9 },
+  { pattern: /\bgallery\b/i, category: 'components', subcategory: 'carousels', tag: 'carousel', priority: 8 },
+  { pattern: /image\s*slider|slideshow/i, category: 'components', subcategory: 'carousels', tag: 'carousel', priority: 8 },
+
+  // Avatars
+  { pattern: /\bavatar\b/i, category: 'components', subcategory: 'avatars', tag: 'avatar', priority: 8 },
+
+  // Text effects (keyword fallback below the author-intent rule above)
+  { pattern: /typewriter|typing\s*effect|scramble\s*text|text\s*reveal|gradient\s*text/i, category: 'patterns', subcategory: 'text', tag: 'text', priority: 8 },
 
   // Modals
   { pattern: /modal/i, category: 'components', subcategory: 'modals', tag: 'modal', priority: 8 },

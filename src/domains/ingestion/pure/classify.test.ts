@@ -23,6 +23,17 @@ describe('classify', () => {
     expect(classify(src).subcategory).toBe('buttons');
   });
 
+  it('files the new sections: text effects, carousels, avatars', () => {
+    expect(classify('export default function GradientText() { return <span>hi</span>; }').subcategory).toBe('text');
+    expect(classify('const TypewriterText = () => <p>typing...</p>;').subcategory).toBe('text');
+    expect(classify('export default function Carousel() { return <div className="swiper" />; }').subcategory).toBe('carousels');
+    expect(classify('<div className="avatar"><img src="x"/></div>').subcategory).toBe('avatars');
+  });
+
+  it('does not mistake a TextField/Input for a text effect', () => {
+    expect(classify('export default function TextField() { return <input type="text" />; }').subcategory).toBe('inputs');
+  });
+
   it('files a WebGL scene under backgrounds even when it wraps a button', () => {
     const src = `
       const InfiniteMenu = () => {
