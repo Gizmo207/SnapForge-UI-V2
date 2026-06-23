@@ -55,3 +55,21 @@ export function findUnresolvedAliasImports(code: string): string[] {
   return Array.from(out);
 }
 
+/**
+ * shadcn/registry components export their component as a NAMED export
+ * (`export function Foo`), but the preview harness and demo wrapper import a
+ * DEFAULT export. When there's no default export, find the primary PascalCase
+ * named export and append `export default Foo;` so it can be imported. No-op when
+ * a default export already exists or no named component is found (e.g. HTML).
+ */
+export function ensureDefaultExport(code: string): string {
+  if (/export\s+default\b/.test(code)) return code;
+  const m =
+    code.match(/export\s+(?:async\s+)?function\s+([A-Z][\w$]*)/) ||
+    code.match(/export\s+const\s+([A-Z][\w$]*)\s*[:=]/) ||
+    code.match(/export\s+class\s+([A-Z][\w$]*)/) ||
+    code.match(/export\s*\{\s*([A-Z][\w$]*)/);
+  if (!m) return code;
+  return `${code}\nexport default ${m[1]};\n`;
+}
+

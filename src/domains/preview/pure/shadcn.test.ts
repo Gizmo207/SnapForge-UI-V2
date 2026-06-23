@@ -1,5 +1,27 @@
 import { describe, it, expect } from 'vitest';
-import { rewriteCnImport, findUnresolvedAliasImports, CN_UTIL_SOURCE } from './shadcn';
+import { rewriteCnImport, findUnresolvedAliasImports, ensureDefaultExport, CN_UTIL_SOURCE } from './shadcn';
+
+describe('ensureDefaultExport', () => {
+  it('adds a default export for a named-export component (shadcn style)', () => {
+    const out = ensureDefaultExport(`export function AnimatedCircularProgressBar() { return null; }`);
+    expect(out).toContain('export default AnimatedCircularProgressBar;');
+  });
+
+  it('handles export const and export { Name } forms', () => {
+    expect(ensureDefaultExport(`export const Marquee = () => null;`)).toContain('export default Marquee;');
+    expect(ensureDefaultExport(`function Dock(){}\nexport { Dock };`)).toContain('export default Dock;');
+  });
+
+  it('is a no-op when a default export already exists', () => {
+    const src = `export default function Foo() { return null; }`;
+    expect(ensureDefaultExport(src)).toBe(src);
+  });
+
+  it('is a no-op when there is no PascalCase named export', () => {
+    const src = `export const helper = () => 1;`;
+    expect(ensureDefaultExport(src)).toBe(src);
+  });
+});
 
 describe('findUnresolvedAliasImports', () => {
   it('flags @/ and ~/ local imports the sandbox cannot resolve', () => {

@@ -8,6 +8,7 @@ import { buildDemoApp } from '@/domains/preview/pure/demoWrapper';
 import {
   rewriteCnImport,
   findUnresolvedAliasImports,
+  ensureDefaultExport,
   CN_UTIL_SOURCE,
   CN_SHIM_PATH,
 } from '@/domains/preview/pure/shadcn';
@@ -69,6 +70,9 @@ export function PreviewSandbox({ component }: { component: Component }) {
     artifact = artifact.split(asset.refPath).join(asset.url);
     if (demoSrc) demoSrc = demoSrc.split(asset.refPath).join(asset.url);
   }
+  // shadcn/registry components use a named export; the harness imports a default.
+  // Add one if missing so they can be imported (no-op for HTML / default exports).
+  if (component.framework !== 'html') artifact = ensureDefaultExport(artifact);
   const sc = pickShowcase(component);
   // A user-chosen backdrop replaces the plain stage color so glass/overlay
   // components have something to refract. All backdrops are dark, so pair them
