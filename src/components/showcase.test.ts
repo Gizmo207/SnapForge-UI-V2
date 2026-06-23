@@ -1,5 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { usesTailwind, worksOnBoth, usesPrivateClassSyntax } from './showcase';
+import { usesTailwind, worksOnBoth, usesPrivateClassSyntax, fillsStage } from './showcase';
+import type { Component } from '@/domains/shared/component';
+
+const asComponent = (source: string) => ({ source }) as unknown as Component;
+
+describe('fillsStage', () => {
+  it('fills for R3F and raw WebGL scenes', () => {
+    expect(fillsStage(asComponent('<Canvas><mesh/></Canvas>'))).toBe(true);
+    expect(fillsStage(asComponent("const gl = canvas.getContext('webgl2', { antialias: true });"))).toBe(true);
+    expect(fillsStage(asComponent('new THREE.WebGLRenderer({ canvas })'))).toBe(true);
+  });
+
+  it('does not fill for fixed-size DOM or 2d-canvas components', () => {
+    expect(fillsStage(asComponent('<div className="loader" />'))).toBe(false);
+    expect(fillsStage(asComponent("const ctx = canvas.getContext('2d');"))).toBe(false);
+  });
+});
 
 describe('usesPrivateClassSyntax', () => {
   it('detects private methods, fields, and this.# access', () => {

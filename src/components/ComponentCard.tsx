@@ -101,11 +101,16 @@ export function ComponentCard({
       >
         {!allowed ? (
           <div className="stage-blocked">🔒 blocked by gate</div>
-        ) : live ? (
+        ) : live && !expanded ? (
           // Missing assets never block the preview — a component usually renders
           // fine without an optional image/texture (and the host library ships
           // those demo files separately, so they can't be in the pasted code).
           // We render anyway and surface the assets as a quiet chip nudge below.
+          //
+          // While the expand modal is open we unmount this in-grid preview: a
+          // heavy WebGL component would otherwise run a second animation loop /
+          // GL context behind the modal, stealing GPU from the interactive copy
+          // and making drag/zoom flicker. It re-mounts on close.
           <PreviewSandbox component={component} />
         ) : (
           <div className="stage-poster" aria-hidden>

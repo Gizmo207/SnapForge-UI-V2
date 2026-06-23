@@ -72,14 +72,21 @@ export function needsInteractionHint(c: Component): boolean {
 }
 
 /**
- * React-Three-Fiber scenes paint their own background and fill their parent.
- * Scaling them to fit (as we do for fixed-size DOM components) leaves them
- * floating in dead space; instead we let them fill the stage edge to edge.
- * Scoped to R3F `<Canvas>` so raw-canvas effects and DOM components are
- * unaffected.
+ * WebGL/3D scenes paint their own background and fill their parent. Scaling them
+ * to fit (as we do for fixed-size DOM components) leaves them floating in dead
+ * space AND — worse for interactive ones — a CSS `transform: scale()` on the
+ * canvas distorts the pointer-to-canvas coordinate math, so dragging flickers
+ * and zoom goes haywire. Instead we let these fill the stage edge to edge at 1:1.
+ * Covers React-Three-Fiber `<Canvas>` and raw WebGL (e.g. an InfiniteMenu sphere
+ * built on `getContext('webgl')`). Plain 2d-canvas loaders are unaffected.
  */
 export function fillsStage(c: Component): boolean {
-  return /<Canvas[\s/>]|@react-three\/fiber/i.test(c.source ?? '');
+  const src = c.source ?? '';
+  return (
+    /<Canvas[\s/>]|@react-three\/fiber/i.test(src) ||
+    /getContext\(\s*['"]webgl2?['"]/i.test(src) ||
+    /new\s+THREE\.WebGLRenderer|WebGLRenderingContext|WebGL2RenderingContext/i.test(src)
+  );
 }
 
 // A Tailwind utility token, e.g. flex, bg-black, p-4, rounded-xl, hover:scale-105.
