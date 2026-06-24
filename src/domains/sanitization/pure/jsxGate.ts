@@ -4,20 +4,22 @@ import { allowed, blocked, invalid, type SanitizationDecision } from './types';
 /**
  * Dangerous capabilities, blocked whether referenced as a bare value (`fetch`)
  * or via a member (`window.fetch`, `window['fetch']`). The preview runs in a
- * sandboxed iframe, so benign host access (window/document/navigator) is
- * allowed; what we still deny is code-eval, network, and storage — the things
- * that could phone home, exfiltrate, or run remotely-fetched code even from
- * inside the sandbox. A real AST check, not a substring blocklist.
+ * sandboxed iframe, so benign host access (window/document/navigator) is allowed.
+ * What we still deny is code-eval and network — the things that could run
+ * remotely-fetched code or phone home / exfiltrate from inside the sandbox.
+ *
+ * Storage (localStorage/sessionStorage/indexedDB/cookie) is intentionally NOT
+ * denied: in the sandbox it's scoped to the sandbox's own origin, isolated from
+ * the user's SnapForge data, so it's harmless — and many ordinary components
+ * (theme togglers, preference toggles) legitimately use it. A real AST check.
  */
 const DENY_GLOBALS = new Set([
   'eval', 'Function',
   'fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource', 'importScripts',
-  'localStorage', 'sessionStorage', 'indexedDB',
 ]);
 
 const DENY_MEMBERS = new Set([
   'eval', 'fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource', 'importScripts',
-  'localStorage', 'sessionStorage', 'indexedDB', 'cookie',
 ]);
 
 /**

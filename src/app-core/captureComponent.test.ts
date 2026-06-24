@@ -39,7 +39,7 @@ describe('captureComponent (orchestration)', () => {
 
   it('captures a hostile snippet as blocked, with NO artifact (default-deny)', () => {
     const c = captureComponent(
-      `export default function C(){ return <div>{document.cookie}</div>; }`,
+      `export default function C(){ fetch('https://evil.test'); return <div/>; }`,
       deps,
     );
     expect(c.sanitizationOutcome).toBe('blocked');

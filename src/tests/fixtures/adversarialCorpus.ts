@@ -31,9 +31,11 @@ export const sanitizationCorpus: SanitizationFixture[] = [
   { id: 'jsx-eval', framework: 'react', source: `export default function C(){ eval('alert(1)'); return <div/>; }`, expected: 'blocked' },
   { id: 'jsx-fetch', framework: 'react', source: `export default function C(){ fetch('https://evil.test'); return <div/>; }`, expected: 'blocked' },
   { id: 'jsx-window-fetch', framework: 'react', source: `export default function C(){ window.fetch('https://evil.test'); return <div/>; }`, expected: 'blocked' },
-  { id: 'jsx-document-cookie', framework: 'react', source: `export default function C(){ return <div>{document.cookie}</div>; }`, expected: 'blocked' },
-  { id: 'jsx-window-localstorage', framework: 'react', source: `export default function C(){ window.localStorage.setItem('a','b'); return <div/>; }`, expected: 'blocked' },
   { id: 'jsx-bracket-fetch', framework: 'react', source: `export default function C(){ window['fetch']('x'); return <div/>; }`, expected: 'blocked' },
+  // Storage/cookies are sandbox-origin-isolated (no access to the user's data),
+  // and used by ordinary components (theme togglers), so they are ALLOWED.
+  { id: 'jsx-document-cookie', framework: 'react', source: `export default function C(){ return <div>{document.cookie}</div>; }`, expected: 'allowed' },
+  { id: 'jsx-window-localstorage', framework: 'react', source: `export default function C(){ window.localStorage.setItem('a','b'); return <div/>; }`, expected: 'allowed' },
   { id: 'jsx-dangerously-set', framework: 'react', source: `export default function C(){ return <div dangerouslySetInnerHTML={{ __html: '<b>x</b>' }} />; }`, expected: 'blocked' },
   { id: 'jsx-script-element', framework: 'react', source: `export default function C(){ return <div><script>{'a'}</script></div>; }`, expected: 'blocked' },
 

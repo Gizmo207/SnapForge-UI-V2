@@ -163,8 +163,13 @@ export function PasteModal({
           {showDemo ? (
             <div className="css-field">
               <label className="css-label">
-                Demo / usage{' '}
-                <span>(for wrapper components that render empty — paste the usage example)</span>
+                Demo / usage <span className="opt-tag">optional</span>
+                <span>
+                  {' '}
+                  — only needed if the component renders empty on its own (a wrapper). If a site
+                  lists several usage snippets, the simplest <code>&lt;Component /&gt;</code> is
+                  usually all you need; the rest just show optional props.
+                </span>
               </label>
               <textarea
                 className="css-textarea"
@@ -176,7 +181,7 @@ export function PasteModal({
             </div>
           ) : (
             <button className="link-btn" onClick={() => setShowDemo(true)}>
-              ＋ Add a usage/demo example
+              ＋ Add a usage/demo example <span className="opt-tag">optional</span>
             </button>
           )}
 
