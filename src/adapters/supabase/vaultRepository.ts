@@ -26,6 +26,8 @@ type Row = {
   html_source: string | null;
   css_source: string | null;
   demo_source: string | null;
+  files: Record<string, string> | null;
+  entry_path: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -47,6 +49,8 @@ function toComponent(row: Row): Component {
     htmlSource: row.html_source,
     cssSource: row.css_source,
     demoSource: row.demo_source,
+    files: row.files ?? null,
+    entryPath: row.entry_path ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -70,6 +74,8 @@ function toRow(component: Component, ownerId: string): Row {
     html_source: component.htmlSource ?? null,
     css_source: component.cssSource ?? null,
     demo_source: component.demoSource ?? null,
+    files: component.files ?? null,
+    entry_path: component.entryPath ?? null,
     created_at: component.createdAt,
     updated_at: component.updatedAt,
   };

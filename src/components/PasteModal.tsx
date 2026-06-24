@@ -1,24 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { looksLikeOnlyCss } from '@/domains/ingestion/pure/looksLikeCss';
+import { filesFromZip, filesFromFileList } from './upload';
 
 export function PasteModal({
   busy,
   error,
   onClose,
   onSubmit,
+  onSubmitFiles,
 }: {
   busy: boolean;
   error?: string | null;
   onClose: () => void;
   onSubmit: (source: string, css?: string, demo?: string) => void;
+  onSubmitFiles: (files: Record<string, string>) => void;
 }) {
   const [value, setValue] = useState('');
   const [css, setCss] = useState('');
   const [showCss, setShowCss] = useState(false);
   const [demo, setDemo] = useState('');
   const [showDemo, setShowDemo] = useState(false);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // <input webkitdirectory> isn't typed in React; set it imperatively.
+  const folderRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    folderRef.current?.setAttribute('webkitdirectory', '');
+  }, []);
+
+  async function handleUpload(read: Promise<Record<string, string>>) {
+    setUploadBusy(true);
+    setUploadError(null);
+    try {
+      const files = await read;
+      if (Object.keys(files).length === 0) {
+        setUploadError('No source files found in that upload (need .tsx/.jsx/.ts/.css).');
+        return;
+      }
+      onSubmitFiles(files);
+    } catch (e) {
+      setUploadError((e as Error).message || 'Could not read the upload.');
+    } finally {
+      setUploadBusy(false);
+    }
+  }
 
   // The main box wants the JSX/HTML. If it's a bare stylesheet, the component
   // code is missing — warn before submit and steer the CSS to its own field.
@@ -34,6 +62,49 @@ export function PasteModal({
           </button>
         </div>
         <div className="modal-body">
+          <div className="upload-row">
+            <span className="upload-label">
+              Got all the files? Upload a <strong>folder</strong> or <strong>.zip</strong> — multi-file
+              components (shadcn, etc.) just work:
+            </span>
+            <div className="upload-btns">
+              <label className={`btn btn-ghost btn-sm${uploadBusy || busy ? ' is-disabled' : ''}`}>
+                📁 Folder
+                <input
+                  ref={folderRef}
+                  type="file"
+                  hidden
+                  multiple
+                  disabled={uploadBusy || busy}
+                  onChange={(e) => {
+                    const l = e.target.files;
+                    if (l && l.length) void handleUpload(filesFromFileList(l));
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              <label className={`btn btn-ghost btn-sm${uploadBusy || busy ? ' is-disabled' : ''}`}>
+                🗜 .zip
+                <input
+                  type="file"
+                  hidden
+                  accept=".zip,application/zip,application/x-zip-compressed"
+                  disabled={uploadBusy || busy}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void handleUpload(filesFromZip(f));
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              {uploadBusy && <span className="upload-status">Reading files…</span>}
+            </div>
+            {uploadError && <div className="paste-warn">⚠ {uploadError}</div>}
+          </div>
+          <div className="upload-divider">
+            <span>or paste a single component</span>
+          </div>
+
           <textarea
             autoFocus
             spellCheck={false}

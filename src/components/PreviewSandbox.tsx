@@ -12,6 +12,7 @@ import {
   CN_UTIL_SOURCE,
   CN_SHIM_PATH,
 } from '@/domains/preview/pure/shadcn';
+import { assembleMultiFilePreview } from '@/domains/preview/pure/multiFilePreview';
 
 const TAILWIND_CDN = 'https://cdn.tailwindcss.com';
 
@@ -82,15 +83,25 @@ export function PreviewSandbox({ component }: { component: Component }) {
   // R3F scenes paint their own background and fill their parent; let them fill
   // the stage instead of floating as a small scaled box in dead space.
   const fill = fillsStage(component);
+  const isHtml = component.framework === 'html';
+
+  // Multi-file component (uploaded zip/folder): resolve aliases, shim cn, pick a
+  // mount file. Its prepared file set replaces the single-file source below.
+  const multi =
+    !isHtml && component.files && component.entryPath
+      ? assembleMultiFilePreview(component.files, component.entryPath)
+      : null;
+  const appImportPath = multi ? multi.mountSpecifier : './App';
+
   // Tailwind utility classes need the Tailwind engine running inside the
   // sandbox; inject its runtime only when the snippet actually uses utilities,
   // so self-contained components (styled-components, plain CSS) are untouched.
-  const tailwind = usesTailwind(artifact);
-  const isHtml = component.framework === 'html';
+  const tailwind = usesTailwind(multi ? Object.values(multi.files).join('\n') : artifact);
 
   const dependencies = isHtml
     ? {}
     : Object.fromEntries(component.dependencies.map((d) => [d, 'latest']));
+  if (multi?.cnShimmed) Object.assign(dependencies, { clsx: 'latest', 'tailwind-merge': 'latest' });
   // Background goes on <html> ONLY (the canvas). If <body> also had a background,
   // it would paint as a normal box at z-index 0 and hide a component's
   // negative-z-index layers (glow borders, blurred shadows). With only <html>
@@ -122,7 +133,7 @@ try { Object.defineProperty(window, 'devicePixelRatio', { configurable: true, ge
     : '';
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
+import App from '${appImportPath}';
 ${dprCap}${twInject}${cssInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
   html{background:${stageBg};color:${stageFg}}
@@ -189,17 +200,20 @@ window.addEventListener('resize', fit);
   // With a usage/demo snippet, the component moves to /Component.tsx and /App.tsx
   // becomes the demo that imports it and renders it WITH content — so wrapper
   // components (which render empty alone) show something real.
-  const demoApp = !isHtml && demoSrc ? buildDemoApp(artifact, demoSrc) : null;
+  const demoApp = !isHtml && !multi && demoSrc ? buildDemoApp(artifact, demoSrc) : null;
   const files: Record<string, string> = isHtml
     ? {}
-    : demoApp
-      ? { '/Component.tsx': artifact, '/App.tsx': demoApp, '/index.tsx': entry }
-      : { '/App.tsx': artifact, '/index.tsx': entry };
+    : multi
+      ? { ...multi.files, '/index.tsx': entry }
+      : demoApp
+        ? { '/Component.tsx': artifact, '/App.tsx': demoApp, '/index.tsx': entry }
+        : { '/App.tsx': artifact, '/index.tsx': entry };
 
   // shadcn / Magic UI / Aceternity components import the `cn` helper from a path
   // alias (`@/lib/utils`) that isn't in the pasted code. Provide it as a local
   // shim and rewrite those imports so the component resolves and renders.
-  if (!isHtml) {
+  // (Multi-file uploads already had this done in assembleMultiFilePreview.)
+  if (!isHtml && !multi) {
     let needsCn = false;
     for (const key of Object.keys(files)) {
       if (key === '/index.tsx') continue;
@@ -221,20 +235,22 @@ window.addEventListener('resize', fit);
   // surface a clear, actionable message instead of mounting a doomed sandbox.
   const unresolvedAliases = isHtml
     ? []
-    : Array.from(
-        new Set(
-          Object.entries(files)
-            .filter(([k]) => k !== '/index.tsx')
-            .flatMap(([, v]) => findUnresolvedAliasImports(v)),
-        ),
-      );
+    : multi
+      ? multi.unresolved
+      : Array.from(
+          new Set(
+            Object.entries(files)
+              .filter(([k]) => k !== '/index.tsx')
+              .flatMap(([, v]) => findUnresolvedAliasImports(v)),
+          ),
+        );
 
   // Components written with ES2022 class private members (`#method()`, `#field`)
   // — common in self-contained WebGL/canvas widgets — need pre-compilation
   // before Sandpack can bundle them (see lowerPrivateSyntax).
   const needsTranspile =
     !isHtml &&
-    (usesPrivateClassSyntax(artifact) || (demoApp != null && usesPrivateClassSyntax(demoApp)));
+    Object.entries(files).some(([k, v]) => k !== '/index.tsx' && usesPrivateClassSyntax(v));
 
   // Re-run the lazy transform when the relevant inputs change. Keyed on file
   // contents (cheap length+id signature) rather than object identity so it

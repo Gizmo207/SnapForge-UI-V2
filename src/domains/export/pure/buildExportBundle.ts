@@ -74,19 +74,28 @@ export function buildExportBundle(selected: Component[]): ExportBundle {
     }
 
     if (component.framework === 'react') {
-      const artifact = (component.sanitizedArtifact ?? '').trim();
-      if (!artifact) {
-        missingArtifact.push(component.name);
-        continue;
-      }
-      const css = (component.cssSource ?? '').trim();
-      const cssImport = css ? `import './${slug(component)}.css';\n` : '';
-      reactSections.push({
-        path: `react/${slug(component)}.tsx`,
-        contents: `// ${component.name}\n${cssImport}${artifact}\n`,
-      });
-      if (css) {
-        reactSections.push({ path: `react/${slug(component)}.css`, contents: `${css}\n` });
+      // Multi-file component (uploaded folder/zip): emit the whole tree under
+      // react/<slug>/, preserving paths and the original imports so it drops
+      // straight into a project.
+      if (component.files && Object.keys(component.files).length > 0) {
+        for (const [p, contents] of Object.entries(component.files)) {
+          reactSections.push({ path: `react/${slug(component)}${p}`, contents });
+        }
+      } else {
+        const artifact = (component.sanitizedArtifact ?? '').trim();
+        if (!artifact) {
+          missingArtifact.push(component.name);
+          continue;
+        }
+        const css = (component.cssSource ?? '').trim();
+        const cssImport = css ? `import './${slug(component)}.css';\n` : '';
+        reactSections.push({
+          path: `react/${slug(component)}.tsx`,
+          contents: `// ${component.name}\n${cssImport}${artifact}\n`,
+        });
+        if (css) {
+          reactSections.push({ path: `react/${slug(component)}.css`, contents: `${css}\n` });
+        }
       }
     } else {
       const html = (component.htmlSource ?? component.sanitizedArtifact ?? '').trim();

@@ -42,6 +42,14 @@ export type Component = {
   /** Optional secondary artifacts (e.g. an HTML variant + CSS) for export. */
   htmlSource?: string | null;
   cssSource?: string | null;
+  /**
+   * For multi-file components (uploaded zip/folder): every text file keyed by its
+   * sandbox-absolute path (e.g. `/components/ui/x.tsx`, `/lib/utils.ts`). When
+   * present, the preview/export use the whole file set instead of `source`.
+   */
+  files?: Record<string, string> | null;
+  /** The entry file path within `files` (the primary component). */
+  entryPath?: string | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { getCurrentUserId } from '@/adapters/auth/session';
 import { captureComponent } from '@/app-core/captureComponent';
+import { captureFiles } from '@/app-core/captureFiles';
 import {
   saveComponent,
   listComponents,
@@ -105,11 +106,41 @@ export async function POST(request: Request) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  let body: { source?: unknown; css?: unknown; demo?: unknown };
+  let body: { source?: unknown; css?: unknown; demo?: unknown; files?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 });
+  }
+
+  const deps = { id: () => randomUUID(), now: () => new Date().toISOString() };
+
+  // Multi-file upload (zip/folder): a { path: content } map.
+  if (body.files && typeof body.files === 'object' && !Array.isArray(body.files)) {
+    const raw = body.files as Record<string, unknown>;
+    const fileEntries = Object.entries(raw).filter(([, v]) => typeof v === 'string');
+    if (fileEntries.length === 0) {
+      return NextResponse.json({ error: 'files is empty' }, { status: 400 });
+    }
+    // Guardrails against abuse: cap file count and total size.
+    if (fileEntries.length > 400) {
+      return NextResponse.json({ error: 'too many files (max 400)' }, { status: 400 });
+    }
+    const total = fileEntries.reduce((n, [, v]) => n + (v as string).length, 0);
+    if (total > 4_000_000) {
+      return NextResponse.json({ error: 'upload too large (max ~4MB of text)' }, { status: 400 });
+    }
+    const files = Object.fromEntries(fileEntries) as Record<string, string>;
+    try {
+      const component = captureFiles(files, deps);
+      const saved = await saveComponent(component, userId);
+      return NextResponse.json({ component: saved }, { status: 201 });
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'capture_failed', detail: (e as Error).message },
+        { status: 500 },
+      );
+    }
   }
 
   if (typeof body.source !== 'string' || body.source.trim().length === 0) {
@@ -119,15 +150,7 @@ export async function POST(request: Request) {
   const demo = typeof body.demo === 'string' ? body.demo : undefined;
 
   try {
-    const component = captureComponent(
-      body.source,
-      {
-        id: () => randomUUID(),
-        now: () => new Date().toISOString(),
-      },
-      css,
-      demo,
-    );
+    const component = captureComponent(body.source, deps, css, demo);
     const saved = await saveComponent(component, userId);
     return NextResponse.json({ component: saved }, { status: 201 });
   } catch (e) {

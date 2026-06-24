@@ -97,14 +97,14 @@ export function VaultApp({
     [byCatQuery, activeTag],
   );
 
-  async function addSnippet(source: string, css?: string, demo?: string) {
+  async function postComponent(payload: Record<string, unknown>) {
     setBusy(true);
     setError(null);
     try {
       const res = await fetch('/api/components', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source, css, demo }),
+        body: JSON.stringify(payload),
       });
       const body = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -119,6 +119,10 @@ export function VaultApp({
       setBusy(false);
     }
   }
+
+  const addSnippet = (source: string, css?: string, demo?: string) =>
+    postComponent({ source, css, demo });
+  const addFiles = (files: Record<string, string>) => postComponent({ files });
 
   async function setTheme(id: string, theme: 'light' | 'dark') {
     // Optimistic: flip the stage instantly, then persist.
@@ -383,6 +387,7 @@ export function VaultApp({
             setError(null);
           }}
           onSubmit={addSnippet}
+          onSubmitFiles={addFiles}
         />
       )}
 
