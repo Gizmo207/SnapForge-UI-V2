@@ -3,7 +3,14 @@
 import { useEffect, useState } from 'react';
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import type { Component } from '@/domains/shared/component';
-import { pickShowcase, usesTailwind, fillsStage, backdropCss, usesPrivateClassSyntax } from './showcase';
+import {
+  pickShowcase,
+  usesTailwind,
+  fillsStage,
+  backdropCss,
+  usesPrivateClassSyntax,
+  isThemeToggler,
+} from './showcase';
 import { buildDemoApp } from '@/domains/preview/pure/demoWrapper';
 import {
   rewriteCnImport,
@@ -131,12 +138,20 @@ document.head.appendChild(cssEl);
 try { Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: function(){ return Math.min(__rdpr, 1); } }); } catch(e){}
 `
     : '';
+  // Theme togglers flip a `.dark` class on <html> and reveal it with a View
+  // Transition. Give the stage a theme-responsive background so the actual
+  // light↔dark wipe is visible (otherwise the snapshots are identical and only
+  // the icon appears to change).
+  const stageThemeCss = isThemeToggler(component)
+    ? `html{background:#fafafa;color:#18181b}
+  html.dark,html[data-theme='dark']{background:#0a0a0f;color:#fafafa}`
+    : `html{background:${stageBg};color:${stageFg}}`;
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from '${appImportPath}';
 ${dprCap}${twInject}${cssInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
-  html{background:${stageBg};color:${stageFg}}
+  ${stageThemeCss}
   body{margin:0;width:100vw;height:100vh;overflow:hidden}
   #root{display:contents}\`;
 document.head.appendChild(s);

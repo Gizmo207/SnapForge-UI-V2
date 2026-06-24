@@ -1,6 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { usesTailwind, worksOnBoth, usesPrivateClassSyntax, fillsStage } from './showcase';
+import { usesTailwind, worksOnBoth, usesPrivateClassSyntax, fillsStage, isThemeToggler } from './showcase';
 import type { Component } from '@/domains/shared/component';
+
+describe('isThemeToggler', () => {
+  it('detects view-transition and dark-class theme togglers', () => {
+    expect(isThemeToggler(asComponent('document.startViewTransition(() => {})'))).toBe(true);
+    expect(isThemeToggler(asComponent('document.documentElement.classList.toggle("dark")'))).toBe(true);
+    expect(isThemeToggler(asComponent('el.setAttribute("data-theme", "dark")'))).toBe(true);
+  });
+  it('is false for ordinary components', () => {
+    expect(isThemeToggler(asComponent('export function Button(){ return <button/>; }'))).toBe(false);
+  });
+});
 
 const asComponent = (source: string) => ({ source }) as unknown as Component;
 

@@ -133,6 +133,22 @@ export function usesPrivateClassSyntax(code: string): boolean {
 }
 
 /**
+ * Whether a component is a theme toggler — it flips a `.dark` class (or
+ * `data-theme`) on the document, often revealing the change with a View
+ * Transition. On its own it looks half-working (the icon flips, nothing else)
+ * because the stage background is fixed. When true, the preview makes the stage
+ * theme-responsive so the actual light↔dark wipe is visible.
+ */
+export function isThemeToggler(c: Component): boolean {
+  const src = c.source ?? '';
+  return (
+    /\bstartViewTransition\b/.test(src) ||
+    (/\bclassList\b/.test(src) && /['"]dark['"]/.test(src)) ||
+    /setAttribute\(\s*['"]data-theme/.test(src)
+  );
+}
+
+/**
  * Whether a component looks good on EITHER background — true when it paints its
  * own opaque backdrop (a real container background, not a tiny `:before` accent
  * or a translucent fill). Such components are theme-agnostic, so the light/dark
