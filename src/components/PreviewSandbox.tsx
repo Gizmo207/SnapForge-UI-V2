@@ -187,6 +187,10 @@ class PreviewBoundary extends React.Component {
 // whose root is width/height:100%) have a real box to fill instead of
 // collapsing to zero. We then scale the rendered child down if it overflows.
 var FILL = ${fill ? 'true' : 'false'};
+// Text-effect components animate (letters scale/spread), so a measured
+// downscale would shrink them mid-animation and never recover. Render them at
+// their natural (font-bumped) size, centered, no scaling.
+var NOSCALE = ${component.subcategory === 'text' ? 'true' : 'false'};
 const fitEl = document.createElement('div');
 fitEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:' + (FILL ? 'stretch' : 'center') + ';justify-content:' + (FILL ? 'stretch' : 'center') + ';padding:' + (FILL ? '0' : '14px') + ';box-sizing:border-box';
 document.getElementById('root').appendChild(fitEl);
@@ -204,6 +208,8 @@ function fit(){
   child.style.transform = 'none';
   child.style.width = '';
   child.style.height = '';
+  // Text effects: keep natural size, never shrink to chase the animation.
+  if(NOSCALE) return;
   var r = child.getBoundingClientRect();
   // A percentage-sized component (root is width/height:100%) collapses to ~0
   // because the wrapper isn't stretched — let it fill the tile instead.
