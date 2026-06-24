@@ -34,6 +34,17 @@ describe('classify', () => {
     expect(classify('export default function TextField() { return <input type="text" />; }').subcategory).toBe('inputs');
   });
 
+  it('does not mis-file an overlay with a `sidebar:` config key as a sidebar', () => {
+    const src = `const CFG = { sidebar: { position: 'left' } };
+      const GradualBlur = () => <div style={{ backdropFilter: 'blur(8px)' }} />;
+      export default GradualBlur;`;
+    expect(classify(src).subcategory).toBe('backgrounds');
+  });
+
+  it('still classifies a real sidebar (aside / Sidebar component)', () => {
+    expect(classify('export default function AppSidebar(){ return <aside/>; }').subcategory).toBe('sidebars');
+  });
+
   it('files a WebGL scene under backgrounds even when it wraps a button', () => {
     const src = `
       const InfiniteMenu = () => {

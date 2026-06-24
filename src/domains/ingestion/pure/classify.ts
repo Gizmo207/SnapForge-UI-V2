@@ -32,6 +32,9 @@ const rules: Rule[] = [
   // "Text Animations" section. Author intent: a component named `...Text` is a
   // text effect, not whatever element it renders.
   { pattern: (c) => /(?:function|const|class)\s+[A-Za-z0-9_]*Text\b/.test(c), category: 'patterns', subcategory: 'text', tag: 'text', priority: 22 },
+  // A component declared as `…Blur` is a decorative blur overlay (e.g. React
+  // Bits' GradualBlur), not whatever a config key inside it happens to mention.
+  { pattern: (c) => /(?:function|const|class)\s+[A-Za-z0-9_]*Blur\b/.test(c), category: 'patterns', subcategory: 'backgrounds', tag: 'blur', priority: 21 },
 
   // Structural detection (high priority)
   { pattern: (c) => /<form/i.test(c) && /<input/i.test(c), category: 'patterns', subcategory: 'forms', tag: 'form', priority: 20 },
@@ -121,7 +124,9 @@ const rules: Rule[] = [
   // Navigation
   { pattern: /navbar/i, category: 'patterns', subcategory: 'navbars', tag: 'navigation', priority: 9 },
   { pattern: /<nav/i, category: 'patterns', subcategory: 'navbars', tag: 'navigation', priority: 8 },
-  { pattern: /sidebar/i, category: 'patterns', subcategory: 'sidebars', tag: 'sidebar', priority: 8 },
+  // Structural, so a `sidebar:` config key inside another component doesn't
+  // mis-file it: an <aside>, a sidebar class, or a component named …Sidebar.
+  { pattern: /<aside\b|class(?:Name)?=["'][^"']*\bsidebar|(?:function|const|class)\s+[A-Za-z0-9_]*Sidebar\b/i, category: 'patterns', subcategory: 'sidebars', tag: 'sidebar', priority: 8 },
 
   // Heroes
   { pattern: /hero/i, category: 'patterns', subcategory: 'heroes', tag: 'hero', priority: 8 },
