@@ -84,6 +84,12 @@ describe('usesTailwind', () => {
     expect(usesTailwind(`<div className="card flex">only one utility</div>`)).toBe(false);
   });
 
+  it('detects Tailwind inside cn()/clsx (shadcn pattern), not just className="..."', () => {
+    expect(
+      usesTailwind(`<button className={cn("bg-primary text-primary-foreground rounded-lg px-4 py-2", className)}>x</button>`),
+    ).toBe(true);
+  });
+
   it('returns false when there are no class attributes', () => {
     expect(usesTailwind(`const x = 1; <div />`)).toBe(false);
   });

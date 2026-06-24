@@ -98,21 +98,22 @@ const TW_UTILITY =
   /^(flex|grid|hidden|block|inline-flex|container|relative|absolute|fixed|sticky|bg-\S+|text-\S+|[pm][xytrbl]?-\S+|rounded(?:-\S+)?|[wh]-\S+|gap-\S+|(?:items|justify|content|self)-\S+|(?:hover|focus|active|group-hover|md|lg|xl|sm|dark):\S+|space-[xy]-\S+|font-(?:bold|semibold|medium|light)|shadow(?:-\S+)?|border(?:-\S+)?|opacity-\d+|transition(?:-\S+)?|duration-\d+|scale-\d+|translate-\S+)$/;
 
 /**
- * Detects whether a snippet relies on Tailwind utility classes. We look ONLY
- * inside className/class attributes (so CSS-in-JS like styled-components, whose
- * class names are semantic, never false-positives) and require ≥2 distinct
- * utility tokens. When true, the preview injects the Tailwind runtime.
+ * Detects whether a snippet relies on Tailwind utility classes. shadcn/Magic UI
+ * components write classes as `className={cn("bg-primary …")}` or template
+ * literals — not just bare `className="…"` — so we scan ALL string literals for
+ * utility tokens, requiring ≥2 DISTINCT ones (so a stray "flex" in some other
+ * string, or a semantic styled-components name, never false-positives). When
+ * true, the preview injects the Tailwind runtime + shadcn theme preset.
  */
 export function usesTailwind(code: string): boolean {
-  const attrs = code.match(/class(?:Name)?=["'][^"']+["']/g);
-  if (!attrs) return false;
-  let hits = 0;
-  for (const attr of attrs) {
-    const value = attr.replace(/^class(?:Name)?=["']/, '').replace(/["']$/, '');
-    for (const token of value.split(/\s+/)) {
+  const strings = code.match(/["'`][^"'`]*["'`]/g);
+  if (!strings) return false;
+  const seen = new Set<string>();
+  for (const s of strings) {
+    for (const token of s.slice(1, -1).split(/\s+/)) {
       if (TW_UTILITY.test(token)) {
-        hits += 1;
-        if (hits >= 2) return true;
+        seen.add(token);
+        if (seen.size >= 2) return true;
       }
     }
   }
