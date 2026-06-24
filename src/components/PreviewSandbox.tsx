@@ -208,6 +208,10 @@ function fit(){
   child.style.transform = 'none';
   child.style.width = '';
   child.style.height = '';
+  // Don't let the centering flexbox squish a wide component down to its
+  // min-content width (which makes text wrap into a thin strip) — keep its
+  // natural width and scale the whole box to fit instead.
+  child.style.flexShrink = '0';
   // Text effects: keep natural size, never shrink to chase the animation.
   if(NOSCALE) return;
   var r = child.getBoundingClientRect();
