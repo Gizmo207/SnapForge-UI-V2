@@ -39,7 +39,11 @@ export const SHADCN_PRESET_CSS = `
   .text-foreground{color:hsl(var(--foreground))}.text-card-foreground{color:hsl(var(--card-foreground))}.text-popover-foreground{color:hsl(var(--popover-foreground))}.text-primary{color:hsl(var(--primary))}.text-primary-foreground{color:hsl(var(--primary-foreground))}.text-secondary-foreground{color:hsl(var(--secondary-foreground))}.text-muted-foreground{color:hsl(var(--muted-foreground))}.text-accent-foreground{color:hsl(var(--accent-foreground))}.text-destructive{color:hsl(var(--destructive))}
   .border-border{border-color:hsl(var(--border))}.border-input{border-color:hsl(var(--input))}
   @keyframes mui-pulse{0%,100%{box-shadow:0 0 0 0 var(--pulse-color,hsl(var(--primary)))}50%{box-shadow:0 0 0 8px var(--pulse-color,hsl(var(--primary)))}}
-  [style*='--pulse-color'] .animate-pulse,[style*='--bg'] .animate-pulse,[style*='--pulse-color'].animate-pulse,[style*='--bg'].animate-pulse{animation:mui-pulse var(--duration,1.5s) ease-out infinite !important}`;
+  [style*='--pulse-color'] .animate-pulse,[style*='--bg'] .animate-pulse,[style*='--pulse-color'].animate-pulse,[style*='--bg'].animate-pulse{animation:mui-pulse var(--duration,1.5s) ease-out infinite !important}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(calc(-100% - var(--gap,1rem)))}}
+  @keyframes marquee-vertical{from{transform:translateY(0)}to{transform:translateY(calc(-100% - var(--gap,1rem)))}}
+  .animate-marquee{animation:marquee var(--duration,40s) linear infinite}
+  .animate-marquee-vertical{animation:marquee-vertical var(--duration,40s) linear infinite}`;
 
 /**
  * Rewrites any `import { cn } from "@/…"` (shadcn alias) to the local shim, so

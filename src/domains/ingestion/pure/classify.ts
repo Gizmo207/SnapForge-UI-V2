@@ -90,6 +90,7 @@ const rules: Rule[] = [
 
   // Carousels / galleries / sliders (image sliders, not range inputs)
   { pattern: /carousel|swiper/i, category: 'components', subcategory: 'carousels', tag: 'carousel', priority: 9 },
+  { pattern: /marquee/i, category: 'components', subcategory: 'carousels', tag: 'marquee', priority: 9 },
   { pattern: /\bgallery\b/i, category: 'components', subcategory: 'carousels', tag: 'carousel', priority: 8 },
   { pattern: /image\s*slider|slideshow/i, category: 'components', subcategory: 'carousels', tag: 'carousel', priority: 8 },
 
