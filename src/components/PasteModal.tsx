@@ -43,7 +43,12 @@ export function PasteModal({
           />
           <p className="modal-hint">
             It’s parsed, classified, and security-checked before anything runs. Code only
-            previews inside a sandbox once it passes the gate.
+            previews inside a sandbox once it passes the gate. <br />
+            <span style={{ opacity: 0.85 }}>
+              Paste the component’s <strong>actual code</strong> — if a site shows an install
+              command (<code>npx shadcn add…</code>), grab the source from its <strong>Manual</strong>{' '}
+              tab instead. The <code>cn</code> helper and <code>@/</code> imports are handled for you.
+            </span>
           </p>
 
           {cssInCodeBox && (
