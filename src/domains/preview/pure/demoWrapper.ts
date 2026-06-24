@@ -31,6 +31,7 @@ export function cleanDemoSource(demo: string): string {
   return demo
     .replace(/^\s*import\s[^\n]*$/gm, '') // we provide the component import
     .replace(/^\s*['"]use client['"];?\s*$/gm, '') // a stray directive
+    .replace(/^[ \t]*Copy[ \t]*$/gm, '') // doc-site "Copy" button text picked up in the paste
     .replace(/^\s*\/\/[^\n]*$/gm, '') // line comments between examples
     .replace(/\/\*[\s\S]*?\*\//g, '') // block comments
     .trim();

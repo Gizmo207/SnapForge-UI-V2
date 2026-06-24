@@ -20,6 +20,13 @@ describe('demoWrapper', () => {
     expect(cleaned).toContain('<GlassSurface');
   });
 
+  it('strips a stray doc-site "Copy" line from a pasted usage', () => {
+    const demo = `import { PulsatingButton } from "@/components/ui/pulsating-button"\nCopy\n<PulsatingButton>Pulsating Button</PulsatingButton>`;
+    const cleaned = cleanDemoSource(demo);
+    expect(cleaned).not.toMatch(/^\s*Copy\s*$/m);
+    expect(cleaned).toContain('<PulsatingButton>Pulsating Button</PulsatingButton>');
+  });
+
   it('builds an App that imports the component and renders the usage', () => {
     const code = 'const GlassSurface = () => {};\nexport default GlassSurface;';
     const app = buildDemoApp(code, `<GlassSurface><h2>Hi</h2></GlassSurface>`);

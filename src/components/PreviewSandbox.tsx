@@ -146,6 +146,15 @@ try { Object.defineProperty(window, 'devicePixelRatio', { configurable: true, ge
     ? `html{background:#fafafa;color:#18181b}
   html.dark,html[data-theme='dark']{background:#0a0a0f;color:#fafafa}`
     : `html{background:${stageBg};color:${stageFg}}`;
+  // Magic UI's pulsating button uses `animate-pulse` as a CUSTOM box-shadow ring
+  // animation defined in its tailwind.config — not the default (opacity) pulse,
+  // and not in the copied component. Provide it, scoped to elements that set
+  // `--pulse-color` so the default Tailwind pulse on other components is untouched.
+  const compatCss = /--pulse-color/.test(component.source)
+    ? `
+  @keyframes mui-pulse{0%,100%{box-shadow:0 0 0 0 var(--pulse-color)}50%{box-shadow:0 0 0 8px var(--pulse-color)}}
+  [style*='--pulse-color'].animate-pulse{animation:mui-pulse var(--duration,1.5s) ease-out infinite !important}`
+    : '';
   const entry = `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from '${appImportPath}';
@@ -153,7 +162,7 @@ ${dprCap}${twInject}${cssInject}const s = document.createElement('style');
 s.textContent = \`${NO_SCROLL}
   ${stageThemeCss}
   body{margin:0;width:100vw;height:100vh;overflow:hidden}
-  #root{display:contents}\`;
+  #root{display:contents}${compatCss}\`;
 document.head.appendChild(s);
 // An error boundary so a component that throws at runtime (e.g. a Three.js scene
 // whose external .glb asset isn't bundled with the snippet) shows a readable
