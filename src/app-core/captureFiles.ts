@@ -1,4 +1,5 @@
 import { ingestFiles } from '../domains/ingestion/pure/multiFile';
+import { fixInlineStyleVars } from '../domains/ingestion/pure/fixInlineStyles';
 import { decideSanitization } from '../domains/sanitization/pure/sanitizationDecision';
 import type { Component } from '../domains/shared/component';
 import type { CaptureDeps } from './captureComponent';
@@ -10,7 +11,11 @@ import type { CaptureDeps } from './captureComponent';
  * gate decides safety.
  */
 export function captureFiles(rawFiles: Record<string, string>, deps: CaptureDeps): Component {
-  const ingestion = ingestFiles(rawFiles);
+  // Repair unquoted CSS-variable keys in inline styles across every file.
+  const fixed = Object.fromEntries(
+    Object.entries(rawFiles).map(([path, content]) => [path, fixInlineStyleVars(content)]),
+  );
+  const ingestion = ingestFiles(fixed);
   if (!ingestion) {
     throw new Error(
       'No React component found in the upload. Make sure the zip/folder contains the ' +

@@ -1,5 +1,6 @@
 import { ingest } from '../domains/ingestion/pure/ingest';
 import { looksLikeOnlyCss } from '../domains/ingestion/pure/looksLikeCss';
+import { fixInlineStyleVars } from '../domains/ingestion/pure/fixInlineStyles';
 import { decideSanitization } from '../domains/sanitization/pure/sanitizationDecision';
 import { jsxGate } from '../domains/sanitization/pure/jsxGate';
 import { buildDemoApp } from '../domains/preview/pure/demoWrapper';
@@ -45,6 +46,11 @@ export function captureComponent(
     );
   }
 
+  // Repair unquoted CSS-variable keys in inline styles (a common copy/author bug
+  // that otherwise leaves the code unparseable, so it can't be gated or rendered).
+  source = fixInlineStyleVars(source);
+  const fixedDemo = demo ? fixInlineStyleVars(demo) : demo;
+
   const ingestion = ingest(source);
   const decision = decideSanitization(source, ingestion.framework);
   const timestamp = deps.now();
@@ -60,10 +66,10 @@ export function captureComponent(
   // A usage/demo snippet is rendered in the same sandbox, so it must clear the
   // same gate. We probe the demo wrapped as a module; only safe demos are kept.
   let demoSource: string | null = null;
-  if (demo && demo.trim() && artifact) {
-    const probe = buildDemoApp(artifact, demo);
+  if (fixedDemo && fixedDemo.trim() && artifact) {
+    const probe = buildDemoApp(artifact, fixedDemo);
     if (probe && jsxGate(probe).outcome === 'allowed') {
-      demoSource = demo.trim();
+      demoSource = fixedDemo.trim();
     }
   }
 
