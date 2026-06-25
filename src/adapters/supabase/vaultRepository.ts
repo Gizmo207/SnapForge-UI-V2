@@ -129,6 +129,23 @@ export async function listComponents(ownerId: string): Promise<Component[]> {
   return attachAssets((data as Row[]).map(toComponent));
 }
 
+/** Components in a single category/subcategory (owner-scoped), newest first.
+ * Used by the MCP `list_vault` tool. */
+export async function listComponentsByCategory(
+  ownerId: string,
+  category: string,
+): Promise<Component[]> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('components')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .or(`category.eq.${category},subcategory.eq.${category}`)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`listComponentsByCategory failed: ${error.message}`);
+  return (data as Row[]).map(toComponent);
+}
+
 /** Removes a component (and its asset rows) the owner controls. Idempotent. */
 export async function deleteComponent(componentId: string, ownerId: string): Promise<void> {
   const supabase = getSupabaseServerClient();

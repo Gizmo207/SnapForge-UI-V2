@@ -38,3 +38,22 @@ create policy components_owner_only on components
   for all
   using (owner_id = current_setting('request.owner_id', true))
   with check (owner_id = current_setting('request.owner_id', true));
+
+-- MCP personal access tokens. The server resolves a presented token to its
+-- owner_id (service role), then scopes every vault query to that owner. Only the
+-- SHA-256 hash is stored; the raw token is shown to the user once at creation.
+create table if not exists api_tokens (
+  id            uuid primary key default gen_random_uuid(),
+  owner_id      text not null,
+  token_hash    text not null unique,
+  label         text not null default 'MCP token',
+  created_at    timestamptz not null default now(),
+  last_used_at  timestamptz
+);
+
+create index if not exists api_tokens_owner_idx on api_tokens (owner_id);
+create index if not exists api_tokens_hash_idx on api_tokens (token_hash);
+
+-- Accessed only via the service role (bypasses RLS); enable RLS with no public
+-- policy so the table is never readable with the anon key.
+alter table api_tokens enable row level security;

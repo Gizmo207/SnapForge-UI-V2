@@ -6,6 +6,7 @@ import type { BackdropId, Component } from '@/domains/shared/component';
 import type { ViewerProfile } from '@/adapters/auth/session';
 import { ComponentCard } from './ComponentCard';
 import { PasteModal } from './PasteModal';
+import { McpModal } from './McpModal';
 import { Sidebar, type Cat } from './Sidebar';
 import { CAT_ORDER, catLabel } from './categories';
 
@@ -36,6 +37,7 @@ export function VaultApp({
   }, [activeCat]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
+  const [mcpOpen, setMcpOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -274,6 +276,13 @@ export function VaultApp({
         >
           {exporting ? '⏳ Bundling…' : `⬇ Export${selected.size ? ` (${selected.size})` : ''}`}
         </button>
+        <button
+          className="btn"
+          onClick={() => setMcpOpen(true)}
+          title="Connect your vault to an AI agent (Claude Code, Cursor, Windsurf) over MCP"
+        >
+          🔌 Connect AI
+        </button>
         <div className="usermenu">
           <button
             className="avatar"
@@ -392,6 +401,8 @@ export function VaultApp({
           onSubmitRegistry={addRegistry}
         />
       )}
+
+      {mcpOpen && <McpModal onClose={() => setMcpOpen(false)} />}
 
       {confirmDel && (
         <div className="overlay" onClick={() => setConfirmDel(null)}>
