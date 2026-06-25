@@ -206,6 +206,7 @@ function fit(){
     return;
   }
   child.style.transform = 'none';
+  child.style.zoom = '';
   child.style.width = '';
   child.style.height = '';
   // Don't let the centering flexbox squish a wide component down to its
@@ -225,8 +226,14 @@ function fit(){
   // Otherwise it's a natural-size component: scale down only if it overflows.
   var aw = window.innerWidth - 24, ah = window.innerHeight - 24;
   var scale = Math.min(1, aw / r.width, ah / r.height);
-  child.style.transformOrigin = 'center center';
-  child.style.transform = 'scale(' + scale + ')';
+  // Use CSS zoom, not transform scale, to shrink. A CSS transform makes the
+  // element a containing block / its own compositing layer, which silently
+  // breaks backdrop-filter (glass + gradual-blur read an empty backdrop and
+  // show nothing). zoom reflows at the smaller size without that side effect,
+  // so blur/glass components render in the grid tile too. Clear any prior
+  // transform so the two never fight.
+  child.style.transform = 'none';
+  if(scale < 1){ child.style.zoom = String(scale); } else { child.style.zoom = ''; }
 }
 window.addEventListener('resize', fit);
 [0,80,250,600,1200].forEach(function(t){ setTimeout(fit, t); });`;
