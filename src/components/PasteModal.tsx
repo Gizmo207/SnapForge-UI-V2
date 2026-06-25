@@ -10,18 +10,21 @@ export function PasteModal({
   onClose,
   onSubmit,
   onSubmitFiles,
+  onSubmitRegistry,
 }: {
   busy: boolean;
   error?: string | null;
   onClose: () => void;
   onSubmit: (source: string, css?: string, demo?: string) => void;
   onSubmitFiles: (files: Record<string, string>) => void;
+  onSubmitRegistry: (registry: string) => void;
 }) {
   const [value, setValue] = useState('');
   const [css, setCss] = useState('');
   const [showCss, setShowCss] = useState(false);
   const [demo, setDemo] = useState('');
   const [showDemo, setShowDemo] = useState(false);
+  const [registry, setRegistry] = useState('');
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -102,6 +105,51 @@ export function PasteModal({
             {uploadError && <div className="paste-warn">⚠ {uploadError}</div>}
           </div>
           <div className="upload-divider">
+            <span>or paste a CLI / registry command</span>
+          </div>
+
+          <div className="upload-row">
+            <span className="upload-label">
+              Site only gives an <strong>install command</strong>? Paste it — we fetch the real
+              source from the registry (<strong>shadcn, Magic UI, Aceternity, Origin UI…</strong>),
+              dependencies and all:
+            </span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="text"
+                spellCheck={false}
+                placeholder="npx shadcn@latest add @magicui/marquee  —or—  https://…/r/marquee.json"
+                value={registry}
+                disabled={busy || uploadBusy}
+                onChange={(e) => setRegistry(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && registry.trim() && !busy && !uploadBusy) {
+                    onSubmitRegistry(registry.trim());
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border, #2a2a35)',
+                  background: 'var(--input-bg, #14141b)',
+                  color: 'inherit',
+                  fontSize: 13,
+                  fontFamily: 'ui-monospace, monospace',
+                }}
+              />
+              <button
+                className="btn btn-ghost btn-sm"
+                disabled={!registry.trim() || busy || uploadBusy}
+                onClick={() => onSubmitRegistry(registry.trim())}
+              >
+                {busy ? 'Importing…' : '⬇ Import'}
+              </button>
+            </div>
+          </div>
+
+          <div className="upload-divider">
             <span>or paste a single component</span>
           </div>
 
@@ -116,9 +164,10 @@ export function PasteModal({
             It’s parsed, classified, and security-checked before anything runs. Code only
             previews inside a sandbox once it passes the gate. <br />
             <span style={{ opacity: 0.85 }}>
-              Paste the component’s <strong>actual code</strong> — if a site shows an install
-              command (<code>npx shadcn add…</code>), grab the source from its <strong>Manual</strong>{' '}
-              tab instead. The <code>cn</code> helper and <code>@/</code> imports are handled for you.
+              Paste the component’s <strong>actual code</strong> here. If the site only gives an
+              install command (<code>npx shadcn add…</code>), use the{' '}
+              <strong>CLI / registry</strong> box above instead — we’ll fetch the source for you. The{' '}
+              <code>cn</code> helper and <code>@/</code> imports are handled either way.
             </span>
           </p>
 

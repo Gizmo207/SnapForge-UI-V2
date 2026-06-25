@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { getCurrentUserId } from '@/adapters/auth/session';
 import { captureComponent } from '@/app-core/captureComponent';
 import { captureFiles } from '@/app-core/captureFiles';
+import { resolveRegistry, httpFetchJson } from '@/adapters/registry/resolveRegistry';
 import {
   saveComponent,
   listComponents,
@@ -106,7 +107,7 @@ export async function POST(request: Request) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-  let body: { source?: unknown; css?: unknown; demo?: unknown; files?: unknown };
+  let body: { source?: unknown; css?: unknown; demo?: unknown; files?: unknown; registry?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -114,6 +115,23 @@ export async function POST(request: Request) {
   }
 
   const deps = { id: () => randomUUID(), now: () => new Date().toISOString() };
+
+  // Registry / CLI install: a `npx shadcn add …` command or a registry .json URL.
+  // We fetch the registry item (and its registryDependencies) server-side and feed
+  // the resulting files through the same multi-file capture as a zip/folder.
+  if (typeof body.registry === 'string' && body.registry.trim().length > 0) {
+    try {
+      const { files } = await resolveRegistry(body.registry, httpFetchJson);
+      const component = captureFiles(files, deps);
+      const saved = await saveComponent(component, userId);
+      return NextResponse.json({ component: saved }, { status: 201 });
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'registry_failed', detail: (e as Error).message },
+        { status: 502 },
+      );
+    }
+  }
 
   // Multi-file upload (zip/folder): a { path: content } map.
   if (body.files && typeof body.files === 'object' && !Array.isArray(body.files)) {

@@ -123,6 +123,7 @@ export function VaultApp({
   const addSnippet = (source: string, css?: string, demo?: string) =>
     postComponent({ source, css, demo });
   const addFiles = (files: Record<string, string>) => postComponent({ files });
+  const addRegistry = (registry: string) => postComponent({ registry });
 
   async function setTheme(id: string, theme: 'light' | 'dark') {
     // Optimistic: flip the stage instantly, then persist.
@@ -388,6 +389,7 @@ export function VaultApp({
           }}
           onSubmit={addSnippet}
           onSubmitFiles={addFiles}
+          onSubmitRegistry={addRegistry}
         />
       )}
 
