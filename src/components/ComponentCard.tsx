@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import type { BackdropId, Component, ComponentAsset } from '@/domains/shared/component';
 import { detectAssets } from '@/domains/ingestion/pure/detectAssets';
 import { PreviewSandbox } from './PreviewSandbox';
+import { scheduleMount } from './previewGate';
 import { AssetsModal } from './AssetsModal';
 import {
   pickShowcase,
@@ -70,7 +71,9 @@ export function ComponentCard({
   const canToggle = worksOnBoth(component.source);
 
   // Auto-load the preview when the card scrolls into view (no hover needed).
-  // Offscreen cards stay deferred so we don't mount dozens of sandboxes at once.
+  // Offscreen cards stay deferred so we don't mount dozens of sandboxes at once;
+  // and when many become visible together, scheduleMount staggers their start so
+  // the Sandpack bundler isn't hit by a simultaneous burst (which times out).
   useEffect(() => {
     if (!allowed || live) return;
     const el = stageRef.current;
@@ -79,17 +82,21 @@ export function ComponentCard({
       setLive(true);
       return;
     }
+    let cancelMount: (() => void) | null = null;
     const io = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
-          setLive(true);
           io.disconnect();
+          cancelMount = scheduleMount(() => setLive(true));
         }
       },
-      { rootMargin: '200px' },
+      { rootMargin: '150px' },
     );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      cancelMount?.();
+    };
   }, [allowed, live]);
 
   return (
