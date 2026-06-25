@@ -79,7 +79,10 @@ export function assembleMultiFilePreview(
 
   let cnShimmed = false;
   for (const key of Object.keys(files)) {
-    const r = rewriteCnImport(files[key]);
+    // The shim lives at CN_SHIM_PATH; each importing file needs the path relative
+    // to ITS OWN location (a nested `/components/ui/x.tsx` needs `../../lib/cn`,
+    // not `./lib/cn`), or Sandpack resolves it against the wrong directory.
+    const r = rewriteCnImport(files[key], relSpecifier(key, CN_SHIM_PATH));
     if (r.rewritten) {
       files[key] = r.code;
       cnShimmed = true;

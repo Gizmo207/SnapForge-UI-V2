@@ -30,6 +30,21 @@ describe('multiFilePreview', () => {
     expect(out.unresolved).toEqual([]);
   });
 
+  it('shims cn for a NESTED file with the correct relative path to the shim', () => {
+    // Regression: a registry component at /components/ui/* whose cn helper wasn't
+    // fetched must import the shim as ../../lib/cn, not ./lib/cn.
+    const files = {
+      '/components/ui/3d-globe.tsx':
+        'import { cn } from "@/lib/utils";\nexport function Globe(){ return null; }',
+    };
+    const out = assembleMultiFilePreview(files, '/components/ui/3d-globe.tsx');
+    expect(out.files['/components/ui/3d-globe.tsx']).toContain(`'../../lib/cn'`);
+    expect(out.files['/components/ui/3d-globe.tsx']).not.toContain(`'./lib/cn'`);
+    expect(out.files['/lib/cn.ts']).toContain('export function cn');
+    expect(out.cnShimmed).toBe(true);
+    expect(out.unresolved).toEqual([]);
+  });
+
   it('mounts a demo when present and reports it via mountSpecifier', () => {
     const files = {
       '/components/ui/gauge.tsx': 'export function Gauge(){ return null; }',

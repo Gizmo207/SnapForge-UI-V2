@@ -50,14 +50,22 @@ export const SHADCN_PRESET_CSS = `
  * Sandpack can resolve it. Matches single- or multi-line named imports that
  * include `cn`, from any `@/`-aliased path. Returns the (possibly) rewritten code
  * and whether a rewrite happened (so the caller knows to add the shim + deps).
+ *
+ * `specifier` is the import path to the shim *relative to the file being
+ * rewritten*. It defaults to `./lib/cn` (correct for a root-level single-file
+ * artifact). A multi-file caller must pass the per-file relative path (e.g.
+ * `../../lib/cn` for `/components/ui/x.tsx`), or the shim won't resolve.
  */
-export function rewriteCnImport(code: string): { code: string; rewritten: boolean } {
+export function rewriteCnImport(
+  code: string,
+  specifier = './lib/cn',
+): { code: string; rewritten: boolean } {
   let rewritten = false;
   const out = code.replace(
     /(import\s*\{[^}]*\bcn\b[^}]*\}\s*from\s*)['"]@\/[^'"]*['"]/g,
     (_match, head: string) => {
       rewritten = true;
-      return `${head}'./lib/cn'`;
+      return `${head}'${specifier}'`;
     },
   );
   return { code: out, rewritten };
