@@ -6,7 +6,10 @@ import styled from "styled-components";
 // Spans generated from the kana set rather than hand-listed, same styled CSS.
 const KANA =
   "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ";
-const CELLS = Array.from({ length: 700 }, (_, i) => KANA[i % KANA.length]);
+// Enough cells to overflow the grid's min-height at ~48 cols, so the matrix
+// fills the whole section top-to-bottom (with align-content:start) rather than
+// running out of glyphs partway down.
+const CELLS = Array.from({ length: 1560 }, (_, i) => KANA[i % KANA.length]);
 
 const Pattern = () => {
   return (

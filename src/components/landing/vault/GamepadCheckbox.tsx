@@ -7,7 +7,7 @@ const Checkbox = () => {
   return (
     <StyledWrapper>
       <div>
-        <input type="checkbox" id="power-toggle" className="toggle-input" />
+        <input type="checkbox" id="power-toggle" className="toggle-input" defaultChecked />
         <div className="device">
           <div className="bumper top-bumper" />
           <div className="bumper bot-bumper" />
