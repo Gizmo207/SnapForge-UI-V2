@@ -38,7 +38,7 @@ const StyledWrapper = styled.div`
     color: rgba(0, 150, 255, 0.4);
     font-family: "Courier New", Courier, monospace;
     justify-content: center;
-    align-content: center;
+    align-content: start;
   }
 
   .jp-matrix > span {
