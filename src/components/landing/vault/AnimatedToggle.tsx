@@ -34,7 +34,7 @@ const StyledWrapper = styled.div`
       inset 0 0 2px 22px black;
     border-radius: 5px;
     padding: 20px;
-    perspective: 700px;
+    perspective: 1100px;
   }
 
   .switch input {
@@ -42,7 +42,7 @@ const StyledWrapper = styled.div`
   }
 
   .switch input:checked + .button {
-    transform: translateZ(20px) rotateX(25deg);
+    transform: translateZ(20px) rotateX(12deg);
     box-shadow: 0 -10px 20px #ff1818;
   }
 
@@ -62,7 +62,7 @@ const StyledWrapper = styled.div`
     display: block;
     transition: all 0.3s cubic-bezier(1, 0, 1, 1);
     transform-origin: center center -20px;
-    transform: translateZ(20px) rotateX(-25deg);
+    transform: translateZ(20px) rotateX(-12deg);
     transform-style: preserve-3d;
     background-color: #9b0621;
     height: 100%;
