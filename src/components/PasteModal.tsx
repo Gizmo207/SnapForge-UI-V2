@@ -79,9 +79,9 @@ export function PasteModal({
             previews inside a sandbox once it passes the gate. <br />
             <span style={{ opacity: 0.85 }}>
               Paste the component’s <strong>actual code</strong> here. If the site only gives an
-              install command (<code>npx shadcn add…</code>), use the{' '}
-              <strong>CLI / registry</strong> box below instead — we’ll fetch the source for you. The{' '}
-              <code>cn</code> helper and <code>@/</code> imports are handled either way.
+              install command (<code>npx shadcn add…</code>), use the <strong>CLI</strong> box below
+              instead — we’ll fetch the source for you. The <code>cn</code> helper and{' '}
+              <code>@/</code> imports are handled either way.
             </span>
           </p>
 
@@ -150,20 +150,19 @@ export function PasteModal({
 
           {/* 2) CLI / registry install — common for shadcn-style ecosystems. */}
           <div className="upload-divider">
-            <span>or import from a CLI / registry command</span>
+            <span>or paste a CLI command</span>
           </div>
 
           <div className="upload-row">
             <span className="upload-label">
-              Site only gives an <strong>install command</strong>? Paste it — we fetch the real
-              source from the registry (<strong>shadcn, Magic UI, Aceternity, Origin UI…</strong>),
-              dependencies and all:
+              Got an <strong>install command</strong> instead of code? Paste it (shadcn, Magic UI,
+              Aceternity…) and we fetch the source for you:
             </span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input
                 type="text"
                 spellCheck={false}
-                placeholder="npx shadcn@latest add @magicui/marquee  —or—  https://…/r/marquee.json"
+                placeholder="npx shadcn add @magicui/marquee"
                 value={registry}
                 disabled={busy || uploadBusy}
                 onChange={(e) => setRegistry(e.target.value)}
