@@ -1,3 +1,12 @@
+/* Tailwind v4 — used ONLY by the landing page (.sf-landing). We load the theme
+   tokens + utilities but deliberately NOT the preflight reset, and inside cascade
+   layers. Unlayered author CSS (everything below + the vault UI styles) always
+   beats layered utilities, so the existing app is visually untouched; the landing
+   gets a small scoped reset further down. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
 :root {
   --bg: #08080c;
   --bg-2: #0d0d14;
@@ -388,3 +397,115 @@ label.btn.is-disabled { opacity: .5; pointer-events: none; }
 
 .icon-btn { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim); cursor: pointer; }
 .icon-btn:hover { color: var(--text); border-color: var(--border-2); }
+
+/* ============================================================================
+   LANDING PAGE (.sf-landing) — scoped styles for the marketing home route.
+   Everything here is plain/unlayered CSS so it reliably styles the landing
+   without depending on Tailwind preflight (which we don't load).
+   ============================================================================ */
+
+/* Scoped base reset — only inside the landing, so the app UI is unaffected. */
+.sf-landing {
+  background: #05050a;
+  min-height: 100vh;
+  color: #e8e8f2;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+.sf-landing h1,
+.sf-landing h2,
+.sf-landing h3,
+.sf-landing h4,
+.sf-landing p {
+  margin: 0;
+}
+.sf-landing ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Marquee animation (vault: Component Marquee). The component applies the
+   .animate-marquee / .animate-marquee-vertical classes; define them + keyframes. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - var(--gap, 1rem))); }
+}
+@keyframes marquee-vertical {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(-100% - var(--gap, 1rem))); }
+}
+.animate-marquee { animation: marquee var(--duration, 40s) linear infinite; }
+.animate-marquee-vertical { animation: marquee-vertical var(--duration, 40s) linear infinite; }
+
+/* TWO PI dot-field container (vault). */
+.dot-field-container { position: relative; width: 100%; height: 100%; }
+
+/* Lightfall neon streaks container (vault, ogl/WebGL). */
+.lightfall-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+/* Glass Surface (vault) — SVG-filter glass with a backdrop-filter fallback. */
+.glass-surface {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.26s ease-out;
+}
+.glass-surface__filter {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  z-index: -1;
+}
+.glass-surface__content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: inherit;
+  position: relative;
+  z-index: 1;
+}
+.glass-surface--svg {
+  background: light-dark(
+    hsl(0 0% 100% / var(--glass-frost, 0)),
+    hsl(0 0% 0% / var(--glass-frost, 0))
+  );
+  backdrop-filter: var(--filter-id, url(#glass-filter)) saturate(var(--glass-saturation, 1));
+  box-shadow:
+    0 0 2px 1px light-dark(color-mix(in oklch, black, transparent 85%), color-mix(in oklch, white, transparent 65%)) inset,
+    0 0 10px 4px light-dark(color-mix(in oklch, black, transparent 90%), color-mix(in oklch, white, transparent 85%)) inset,
+    0px 4px 16px rgba(17, 17, 26, 0.05),
+    0px 8px 24px rgba(17, 17, 26, 0.05),
+    0px 16px 56px rgba(17, 17, 26, 0.05),
+    0px 4px 16px rgba(17, 17, 26, 0.05) inset,
+    0px 8px 24px rgba(17, 17, 26, 0.05) inset,
+    0px 16px 56px rgba(17, 17, 26, 0.05) inset;
+}
+.glass-surface--fallback {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(1.8) brightness(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.8) brightness(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.1);
+}
+@supports not (backdrop-filter: blur(10px)) {
+  .glass-surface--fallback { background: rgba(0, 0, 0, 0.4); }
+  .glass-surface--fallback::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: inherit;
+    z-index: -1;
+  }
+}
+.glass-surface:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
