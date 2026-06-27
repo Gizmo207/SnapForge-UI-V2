@@ -404,7 +404,16 @@ label.btn.is-disabled { opacity: .5; pointer-events: none; }
    without depending on Tailwind preflight (which we don't load).
    ============================================================================ */
 
-/* Scoped base reset — only inside the landing, so the app UI is unaffected. */
+/* Scoped base reset — only inside the landing, so the app UI is unaffected.
+   This reproduces the bits of Tailwind preflight the landing components were
+   built against (we don't load preflight globally). Critically, border-box must
+   reach ::before/::after — the universal `*` rule above doesn't — or 3D
+   components built from pseudo-element faces (the rocker toggle) render skewed. */
+.sf-landing *,
+.sf-landing *::before,
+.sf-landing *::after {
+  box-sizing: border-box;
+}
 .sf-landing {
   background: #05050a;
   min-height: 100vh;
