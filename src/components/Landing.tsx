@@ -320,18 +320,46 @@ export function Landing() {
           <h2 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">Start free. Forge faster when you&apos;re ready.</h2>
           <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
-              { name: 'Free', price: '$0', blurb: 'Build your vault', feats: ['Unlimited saves', 'Live previews', 'ZIP export'], highlight: false },
-              { name: 'Pro', price: '$—', blurb: 'Plug in your AI', feats: ['Everything in Free', 'MCP server access', 'Per-client tokens'], highlight: true },
-              { name: 'Team', price: '$—', blurb: 'Share the forge', feats: ['Everything in Pro', 'Shared libraries', 'Seat controls'], highlight: false },
+              {
+                name: 'Free',
+                price: '$0',
+                per: 'forever',
+                blurb: 'Build your vault',
+                feats: ['Unlimited saves', 'Live previews & sandbox', 'ZIP & folder export'],
+                note: '',
+                highlight: false,
+              },
+              {
+                name: 'Pro',
+                price: '$15',
+                per: '/mo',
+                blurb: 'Plug in your AI',
+                feats: ['Everything in Free', 'MCP server for AI agents', 'Unlimited connection tokens', 'Priority support'],
+                note: 'or $144/yr — 2 months free',
+                highlight: true,
+              },
+              {
+                name: 'Team',
+                price: '$39',
+                per: '/mo',
+                blurb: 'Share the forge',
+                feats: ['Everything in Pro', 'Shared team vault', 'Up to 5 seats', 'Seat management'],
+                note: '',
+                highlight: false,
+              },
             ].map((p) => (
-              <GlassSurface key={p.name} width="100%" height={320} borderRadius={26} backgroundOpacity={p.highlight ? 0.06 : 0} className="w-full">
+              <GlassSurface key={p.name} width="100%" height={360} borderRadius={26} backgroundOpacity={p.highlight ? 0.06 : 0} className="w-full">
                 <div className="flex h-full w-full flex-col items-center justify-center px-8 text-center">
                   {p.highlight && (
                     <span className="mb-3 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Most popular</span>
                   )}
                   <h3 className="text-xl font-bold">{p.name}</h3>
                   <p className="mt-1 text-sm text-white/50">{p.blurb}</p>
-                  <p className="mt-4 text-4xl font-extrabold">{p.price}</p>
+                  <p className="mt-4 text-4xl font-extrabold">
+                    {p.price}
+                    <span className="text-base font-medium text-white/50">{p.per}</span>
+                  </p>
+                  {p.note ? <p className="mt-1 text-xs text-violet-200/80">{p.note}</p> : <p className="mt-1 text-xs">&nbsp;</p>}
                   <ul className="mt-5 space-y-2 text-sm text-white/70">
                     {p.feats.map((f) => (
                       <li key={f}>✦ {f}</li>
@@ -341,7 +369,9 @@ export function Landing() {
               </GlassSurface>
             ))}
           </div>
-          <p className="mt-8 text-xs text-white/40">Pricing in progress — MCP access ships as a Pro feature.</p>
+          <p className="mt-8 text-xs text-white/45">
+            Founding offer: lifetime Pro for <strong className="text-white/80">$199</strong>, first 100 members. MCP access is a Pro feature.
+          </p>
         </div>
       </section>
 
