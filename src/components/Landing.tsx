@@ -318,7 +318,7 @@ export function Landing() {
         <div className="mx-auto max-w-6xl px-6 text-center">
           <SectionLabel>Plans</SectionLabel>
           <h2 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">Start free. Forge faster when you&apos;re ready.</h2>
-          <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="mt-16 flex flex-wrap justify-center gap-6">
             {[
               {
                 name: 'Free',
@@ -331,16 +331,16 @@ export function Landing() {
               },
               {
                 name: 'Pro',
-                price: '$15',
+                price: '$19',
                 per: '/mo',
                 blurb: 'Plug in your AI',
                 feats: ['Everything in Free', 'MCP server for AI agents', 'Unlimited connection tokens', 'Priority support'],
-                note: 'or $144/yr — 2 months free',
+                note: '',
                 highlight: true,
               },
               {
                 name: 'Team',
-                price: '$39',
+                price: '$49',
                 per: '/mo',
                 blurb: 'Share the forge',
                 feats: ['Everything in Pro', 'Shared team vault', 'Up to 5 seats', 'Seat management'],
@@ -348,7 +348,7 @@ export function Landing() {
                 highlight: false,
               },
             ].map((p) => (
-              <GlassSurface key={p.name} width="100%" height={360} borderRadius={26} backgroundOpacity={p.highlight ? 0.06 : 0} className="w-full">
+              <GlassSurface key={p.name} width={320} height={360} borderRadius={26} backgroundOpacity={p.highlight ? 0.06 : 0} className="w-full max-w-[320px]">
                 <div className="flex h-full w-full flex-col items-center justify-center px-8 text-center">
                   {p.highlight && (
                     <span className="mb-3 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Most popular</span>

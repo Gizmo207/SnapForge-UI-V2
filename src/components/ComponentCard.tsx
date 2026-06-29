@@ -40,6 +40,12 @@ export function ComponentCard({
   const [assetsOpen, setAssetsOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const stageRef = useRef<HTMLDivElement>(null);
+  // Mirror `live` into a ref so the long-lived IntersectionObservers can read the
+  // current mount state without being torn down and recreated on every toggle.
+  const liveRef = useRef(false);
+  useEffect(() => {
+    liveRef.current = live;
+  }, [live]);
 
   // Close the expanded preview on Escape, the expected fullscreen gesture.
   useEffect(() => {
@@ -70,12 +76,17 @@ export function ComponentCard({
   // locked to the component's best theme so it always reads well.
   const canToggle = worksOnBoth(component.source);
 
-  // Auto-load the preview when the card scrolls into view (no hover needed).
-  // Offscreen cards stay deferred so we don't mount dozens of sandboxes at once;
-  // and when many become visible together, scheduleMount staggers their start so
-  // the Sandpack bundler isn't hit by a simultaneous burst (which times out).
+  // Mount the preview when the card nears the viewport, and UNMOUNT it once it
+  // scrolls far away — otherwise every preview ever seen stays running and a long
+  // category page ends up with dozens of live sandboxes fighting for the GPU.
+  //
+  // Two observers give hysteresis: a tight one mounts when the card is within
+  // ~250px of the viewport; a loose one only releases it once it's ~1000px away.
+  // The wide gap means a card parked near the edge never flickers between states,
+  // and scrolling back a little doesn't trigger a re-bundle. scheduleMount still
+  // staggers simultaneous mount-starts so the bundler isn't hit by a burst.
   useEffect(() => {
-    if (!allowed || live) return;
+    if (!allowed) return;
     const el = stageRef.current;
     if (!el) return;
     if (typeof IntersectionObserver === 'undefined') {
@@ -83,21 +94,38 @@ export function ComponentCard({
       return;
     }
     let cancelMount: (() => void) | null = null;
-    const io = new IntersectionObserver(
+
+    const mountIO = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          io.disconnect();
-          cancelMount = scheduleMount(() => setLive(true));
+        if (entries.some((e) => e.isIntersecting) && !liveRef.current && !cancelMount) {
+          cancelMount = scheduleMount(() => {
+            setLive(true);
+            cancelMount = null;
+          });
         }
       },
-      { rootMargin: '150px' },
+      { rootMargin: '250px' },
     );
-    io.observe(el);
+
+    const releaseIO = new IntersectionObserver(
+      (entries) => {
+        if (entries.every((e) => !e.isIntersecting)) {
+          cancelMount?.();
+          cancelMount = null;
+          setLive(false);
+        }
+      },
+      { rootMargin: '1000px' },
+    );
+
+    mountIO.observe(el);
+    releaseIO.observe(el);
     return () => {
-      io.disconnect();
+      mountIO.disconnect();
+      releaseIO.disconnect();
       cancelMount?.();
     };
-  }, [allowed, live]);
+  }, [allowed]);
 
   return (
     <article className={`card${selected ? ' selected' : ''}`}>
