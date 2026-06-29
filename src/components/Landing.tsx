@@ -164,19 +164,23 @@ export function Landing() {
       </section>
 
       {/* ---------- HOW IT WORKS / 4 WAYS IN ---------- */}
-      <section id="how" className="relative z-10 mx-auto max-w-6xl px-6 py-28 text-center">
-        <SectionLabel>Four ways in</SectionLabel>
-        <h2 className="mx-auto mt-6 max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
-          However you found it, <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">it goes in the vault</span>
-        </h2>
-        <p className="mx-auto mt-5 max-w-2xl text-white/60">
-          Hover a card for the details. Paste, pull from a registry, or upload — every component is
-          parsed, classified, security-gated, and stored under your account.
-        </p>
-        <div className="mt-16 flex flex-wrap items-center justify-center gap-8">
-          {INGEST.map((f) => (
-            <GradientCard key={f.title} title={f.title} description={f.description} gradient={f.gradient} iconPath={f.iconPath} />
-          ))}
+      <section id="how" className="relative z-10 mx-auto max-w-6xl overflow-hidden px-6 py-28 text-center">
+        {/* Warm sunshine glow bleeding in from the top-left corner. */}
+        <CornerLight className="-left-32 -top-24" />
+        <div className="relative z-10">
+          <SectionLabel>Four ways in</SectionLabel>
+          <h2 className="mx-auto mt-6 max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
+            However you found it, <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">it goes in the vault</span>
+          </h2>
+          <p className="mx-auto mt-5 max-w-2xl text-white/60">
+            Hover a card for the details. Paste, pull from a registry, or upload — every component is
+            parsed, classified, security-gated, and stored under your account.
+          </p>
+          <div className="mt-16 flex flex-wrap items-center justify-center gap-8">
+            {INGEST.map((f) => (
+              <GradientCard key={f.title} title={f.title} description={f.description} gradient={f.gradient} iconPath={f.iconPath} />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -385,8 +389,6 @@ export function Landing() {
             at the very bottom for the footer — but the matrix stays visible
             across the middle and lower section instead of crushing to black. */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_52%_44%_at_50%_42%,_rgba(5,5,10,0.74)_0%,_transparent_70%),linear-gradient(to_bottom,_transparent_74%,_#05050a_100%)]" />
-        {/* Warm sunshine glow bleeding in from the top-left corner. */}
-        <CornerLight className="-left-40 -top-40" />
         <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center">
           <KineticText text="Forge faster." className="justify-center text-5xl font-light tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.6)] sm:text-6xl" />
           <p className="mt-6 max-w-xl text-white/80">
