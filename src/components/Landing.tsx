@@ -120,7 +120,7 @@ export function Landing() {
             mouseInteraction
           />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_42%,_rgba(5,5,10,0.55)_0%,_transparent_72%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_72%_62%_at_50%_44%,_rgba(4,4,9,0.82)_0%,_rgba(4,4,9,0.45)_42%,_transparent_76%)]" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-[#08080f]" />
 
         <div className="relative z-10 flex flex-col items-center">
@@ -129,7 +129,7 @@ export function Landing() {
             text="SnapForge UI"
             className="mt-7 justify-center bg-gradient-to-r from-white via-violet-100 to-fuchsia-200 bg-clip-text text-6xl text-transparent sm:text-7xl md:text-8xl"
           />
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/70 sm:text-xl">
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/90 [text-shadow:0_2px_20px_rgba(0,0,0,0.7)] sm:text-xl">
             Save any React or HTML component to your own library — from uiverse, React Bits, Magic UI,
             shadcn, Aceternity, or your own code. SnapForge classifies it, previews it live, exports it,
             and hands it to your AI agent. <strong className="text-white">Any component you save, ready to ship.</strong>
