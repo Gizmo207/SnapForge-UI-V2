@@ -2,6 +2,7 @@
 
 import { signIn } from 'next-auth/react';
 import AnimatedPattern from './landing/vault/AnimatedPattern';
+import CornerLight from './landing/vault/CornerLight';
 import { KineticText } from './landing/vault/KineticText';
 import AnimatedButton from './landing/vault/AnimatedButton';
 import GradientCard from './landing/vault/GradientCard';
@@ -384,6 +385,8 @@ export function Landing() {
             at the very bottom for the footer — but the matrix stays visible
             across the middle and lower section instead of crushing to black. */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_52%_44%_at_50%_42%,_rgba(5,5,10,0.74)_0%,_transparent_70%),linear-gradient(to_bottom,_transparent_74%,_#05050a_100%)]" />
+        {/* Warm sunshine glow bleeding in from the top-left corner. */}
+        <CornerLight className="-left-40 -top-40" />
         <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center">
           <KineticText text="Forge faster." className="justify-center text-5xl font-light tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.6)] sm:text-6xl" />
           <p className="mt-6 max-w-xl text-white/80">
