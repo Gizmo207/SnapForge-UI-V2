@@ -1,5 +1,7 @@
 import { getCurrentUserId, getViewerProfile } from '@/adapters/auth/session';
 import { listComponents } from '@/adapters/supabase/vaultRepository';
+import { getSubscriptionState } from '@/adapters/supabase/subscriptionRepository';
+import { isPaid } from '@/domains/billing/pure/plan';
 import { Landing } from '@/components/Landing';
 import { VaultApp } from '@/components/VaultApp';
 import type { Component } from '@/domains/shared/component';
@@ -23,5 +25,12 @@ export default async function HomePage() {
 
   const viewer = await getViewerProfile();
 
-  return <VaultApp initial={components} userId={userId} viewer={viewer} />;
+  let isPro = false;
+  try {
+    isPro = isPaid(await getSubscriptionState(userId));
+  } catch {
+    isPro = false;
+  }
+
+  return <VaultApp initial={components} userId={userId} viewer={viewer} isPro={isPro} />;
 }

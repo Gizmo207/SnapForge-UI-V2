@@ -14,10 +14,12 @@ export function VaultApp({
   initial,
   userId,
   viewer,
+  isPro = false,
 }: {
   initial: Component[];
   userId: string;
   viewer?: ViewerProfile;
+  isPro?: boolean;
 }) {
   const [components, setComponents] = useState<Component[]>(initial);
   const [query, setQuery] = useState('');
@@ -49,6 +51,16 @@ export function VaultApp({
     setToast(message);
     window.setTimeout(() => setToast(null), 3200);
   }
+
+  // Thank-you after a successful Stripe checkout (success_url adds ?upgraded=1),
+  // then strip the query so a refresh doesn't show it again.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('upgraded') === '1') {
+      flash('🎉 Welcome to Pro — your MCP server is unlocked. Thank you!');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Categories (by subcategory) with counts, ordered canonically — the sidebar
   // groups the vault so cards and toggles aren't jumbled on one page.
@@ -283,6 +295,7 @@ export function VaultApp({
         >
           🔌 Connect AI
         </button>
+        {isPro && <span className="topbar-pro" title="You're on the Pro plan">✦ PRO</span>}
         <div className="usermenu">
           <button
             className="avatar"
@@ -307,34 +320,43 @@ export function VaultApp({
                     <span className="menu-sub">{viewer.email}</span>
                   )}
                 </div>
-                <button
-                  className="menu-item"
-                  role="menuitem"
-                  onClick={async () => {
-                    const res = await fetch('/api/stripe/checkout', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ plan: 'pro', interval: 'month' }),
-                    });
-                    const body = await res.json().catch(() => ({}));
-                    if (body.url) window.location.href = body.url;
-                    else setError(body.detail || body.error || 'Could not start checkout');
-                  }}
-                >
-                  ✦ Upgrade to Pro
-                </button>
-                <button
-                  className="menu-item"
-                  role="menuitem"
-                  onClick={async () => {
-                    const res = await fetch('/api/stripe/portal', { method: 'POST' });
-                    const body = await res.json().catch(() => ({}));
-                    if (body.url) window.location.href = body.url;
-                    else setError(body.detail || body.error || 'No billing account yet');
-                  }}
-                >
-                  💳 Manage billing
-                </button>
+                {isPro ? (
+                  <div className="menu-plan">
+                    <span className="plan-pill">✦ PRO</span>
+                    <span className="plan-note">MCP server unlocked</span>
+                  </div>
+                ) : null}
+                {isPro ? (
+                  <button
+                    className="menu-item"
+                    role="menuitem"
+                    onClick={async () => {
+                      const res = await fetch('/api/stripe/portal', { method: 'POST' });
+                      const body = await res.json().catch(() => ({}));
+                      if (body.url) window.location.href = body.url;
+                      else setError(body.detail || body.error || 'No billing account yet');
+                    }}
+                  >
+                    ⚙ Settings &amp; billing
+                  </button>
+                ) : (
+                  <button
+                    className="menu-item menu-item-accent"
+                    role="menuitem"
+                    onClick={async () => {
+                      const res = await fetch('/api/stripe/checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ plan: 'pro', interval: 'month' }),
+                      });
+                      const body = await res.json().catch(() => ({}));
+                      if (body.url) window.location.href = body.url;
+                      else setError(body.detail || body.error || 'Could not start checkout');
+                    }}
+                  >
+                    ✦ Upgrade to Pro
+                  </button>
+                )}
                 <button className="menu-item" role="menuitem" onClick={() => signOut()}>
                   ⇥ Sign out
                 </button>

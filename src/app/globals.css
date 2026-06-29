@@ -163,7 +163,7 @@ a { color: inherit; text-decoration: none; }
 /* display:block is explicit so it beats Tailwind's layered `.grid` utility
    (display:grid), which would otherwise collapse this multi-column masonry
    layout into a single wide column. */
-.grid { display: block; columns: 300px; column-gap: 22px; }
+.grid { display: block; columns: 250px; column-gap: 22px; }
 
 /* The card is just the showcase + meta below it — no outer box/border. */
 .card {
@@ -375,11 +375,11 @@ label.btn.is-disabled { opacity: .5; pointer-events: none; }
 
 /* ---------- modal ---------- */
 .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(4,4,8,.66); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 24px; }
-.modal { width: min(680px, 100%); background: var(--surface); border: 1px solid var(--border-2); border-radius: 20px; box-shadow: 0 40px 100px -30px rgba(0,0,0,.9); overflow: hidden; }
+.modal { width: min(680px, 100%); max-height: calc(100vh - 48px); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border-2); border-radius: 20px; box-shadow: 0 40px 100px -30px rgba(0,0,0,.9); overflow: hidden; }
 .modal-head { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
 .modal-head h3 { margin: 0; font-size: 16px; }
 .modal-head .x { margin-left: auto; }
-.modal-body { padding: 18px 20px; }
+.modal-body { padding: 18px 20px; flex: 1; min-height: 0; overflow-y: auto; }
 .modal-body textarea {
   width: 100%; min-height: 230px; resize: vertical; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; line-height: 1.55;
   background: var(--bg-2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 14px; outline: none;
@@ -521,3 +521,23 @@ label.btn.is-disabled { opacity: .5; pointer-events: none; }
   }
 }
 .glass-surface:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+
+/* ---------- Pro plan indicators ---------- */
+.topbar-pro {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 800; letter-spacing: .08em;
+  padding: 4px 9px; border-radius: 999px;
+  color: #fff; background: var(--grad);
+  box-shadow: 0 4px 14px -4px rgba(236,72,153,.6);
+}
+.menu-plan {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 11px 10px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.plan-pill {
+  font-size: 11px; font-weight: 800; letter-spacing: .06em;
+  padding: 3px 8px; border-radius: 999px; color: #fff; background: var(--grad);
+}
+.plan-note { font-size: 11.5px; color: var(--text-faint); }
+.menu-item-accent { color: var(--accent-2); font-weight: 600; }
