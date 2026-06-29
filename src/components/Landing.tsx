@@ -377,10 +377,13 @@ export function Landing() {
 
       {/* ---------- CTA (Animated Pattern kana backdrop) ---------- */}
       <section id="start" className="relative z-10 overflow-hidden px-6 py-28 text-center">
-        <div className="absolute inset-0 overflow-hidden opacity-[0.3]">
+        <div className="absolute inset-0 overflow-hidden opacity-[0.6]">
           <AnimatedPattern />
         </div>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#05050a_75%)]" />
+        {/* Soft dark plate behind the heading for readability, plus a gentle fade
+            at the very bottom for the footer — but the matrix stays visible
+            across the middle and lower section instead of crushing to black. */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_52%_44%_at_50%_42%,_rgba(5,5,10,0.74)_0%,_transparent_70%),linear-gradient(to_bottom,_transparent_74%,_#05050a_100%)]" />
         <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center">
           <KineticText text="Forge faster." className="justify-center text-5xl font-light tracking-tight drop-shadow-[0_2px_20px_rgba(0,0,0,0.6)] sm:text-6xl" />
           <p className="mt-6 max-w-xl text-white/80">

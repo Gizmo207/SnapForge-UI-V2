@@ -38,10 +38,12 @@ const StyledWrapper = styled.div`
     min-width: 1920px;
     min-height: 1080px;
     font-size: 32px;
-    color: rgba(0, 150, 255, 0.4);
+    color: rgba(0, 150, 255, 0.55);
     font-family: "Courier New", Courier, monospace;
     justify-content: center;
     align-content: start;
+    /* Nudge the grid up so the dense pattern sits higher in the section. */
+    transform: translateY(-54px);
   }
 
   .jp-matrix > span {
