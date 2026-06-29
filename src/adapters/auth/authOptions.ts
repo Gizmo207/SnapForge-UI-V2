@@ -2,6 +2,9 @@ import type { NextAuthOptions, Profile } from 'next-auth';
 import type { OAuthConfig } from 'next-auth/providers/oauth';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
+import { claimWelcome } from '../supabase/profileRepository';
+import { sendEmail } from '../email/brevo';
+import { welcomeEmail } from '../../domains/email/templates';
 
 /**
  * Auth.js (NextAuth) configuration for the single-owner vault.
@@ -50,6 +53,22 @@ export const authOptions: NextAuthOptions = {
       (session as { ownerId?: string }).ownerId =
         typeof token.ownerId === 'string' ? token.ownerId : undefined;
       return session;
+    },
+  },
+  events: {
+    // First sign-in only: record the owner and send a one-time welcome email.
+    // Best-effort — never let email/DB hiccups block sign-in.
+    async signIn({ user, account }) {
+      if (!account?.provider || !account.providerAccountId) return;
+      const ownerId = `${account.provider}:${account.providerAccountId}`;
+      try {
+        const isNew = await claimWelcome(ownerId, user.email, user.name);
+        if (isNew && user.email) {
+          await sendEmail({ email: user.email, name: user.name }, welcomeEmail(user.name));
+        }
+      } catch (e) {
+        console.error('[auth] welcome email skipped:', (e as Error).message);
+      }
     },
   },
 };

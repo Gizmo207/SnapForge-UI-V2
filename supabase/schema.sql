@@ -71,3 +71,15 @@ create table if not exists subscriptions (
 );
 create index if not exists subscriptions_customer_idx on subscriptions (stripe_customer_id);
 alter table subscriptions enable row level security;
+
+-- Owner profiles: the minimal record of who has signed in. Used to send the
+-- welcome email exactly once (welcomed_at claims it) and to keep contact details
+-- current for transactional email. Accessed via the service role only.
+create table if not exists profiles (
+  owner_id     text primary key,
+  email        text,
+  name         text,
+  created_at   timestamptz not null default now(),
+  welcomed_at  timestamptz
+);
+alter table profiles enable row level security;

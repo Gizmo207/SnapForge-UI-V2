@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { getStripe, priceIds } from '@/adapters/stripe/client';
-import { planForPrice } from '@/domains/billing/pure/plan';
+import { planForPrice, isPaid } from '@/domains/billing/pure/plan';
 import { upsertSubscription, getOwnerByCustomerId } from '@/adapters/supabase/subscriptionRepository';
+import { sendEmail } from '@/adapters/email/brevo';
+import { proThankYouEmail } from '@/domains/email/templates';
 
 export const runtime = 'nodejs';
 
@@ -44,14 +46,29 @@ export async function POST(request: Request) {
         const deleted = event.type === 'customer.subscription.deleted';
         const priceId = sub.items.data[0]?.price?.id ?? null;
         const periodEnd = (sub as { current_period_end?: number }).current_period_end;
+        const plan = deleted ? 'free' : planForPrice(priceId, priceIds());
+        const status = deleted ? 'canceled' : sub.status;
         await upsertSubscription({
           ownerId,
           stripeCustomerId: customerId,
           stripeSubscriptionId: sub.id,
-          plan: deleted ? 'free' : planForPrice(priceId, priceIds()),
-          status: deleted ? 'canceled' : sub.status,
+          plan,
+          status,
           currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
         });
+
+        // Thank-you email on the FIRST activation only (subscription.created with
+        // a paid plan in good standing). Best-effort; never fails the webhook.
+        if (event.type === 'customer.subscription.created' && isPaid({ plan, status })) {
+          try {
+            const customer = await getStripe().customers.retrieve(customerId);
+            const email = !('deleted' in customer) ? customer.email : null;
+            const name = !('deleted' in customer) ? customer.name : null;
+            if (email) await sendEmail({ email, name }, proThankYouEmail(name));
+          } catch (e) {
+            console.error('[webhook] thank-you email skipped:', (e as Error).message);
+          }
+        }
       }
     }
     return NextResponse.json({ received: true });
