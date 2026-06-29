@@ -65,10 +65,104 @@ export function PasteModal({
           </button>
         </div>
         <div className="modal-body">
-          {/* 1) Paste a single component — the most common path, and what the
-              primary "Add to vault" button submits. */}
+          {/* 1) CLI / registry install — first: paste an install command and we
+              fetch the source (shadcn-style ecosystems). */}
+          <div className="upload-divider">
+            <span>paste a CLI command</span>
+          </div>
+
+          <div className="upload-row">
+            <span className="upload-label">
+              Got an <strong>install command</strong> instead of code? Paste it (shadcn, Magic UI,
+              Aceternity…) and we fetch the source for you:
+            </span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="text"
+                spellCheck={false}
+                placeholder="npx shadcn add @magicui/marquee"
+                value={registry}
+                disabled={busy || uploadBusy}
+                onChange={(e) => setRegistry(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && registry.trim() && !busy && !uploadBusy) {
+                    onSubmitRegistry(registry.trim());
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border, #2a2a35)',
+                  background: 'var(--input-bg, #14141b)',
+                  color: 'inherit',
+                  fontSize: 13,
+                  fontFamily: 'ui-monospace, monospace',
+                }}
+              />
+              <button
+                className="btn btn-ghost btn-sm"
+                disabled={!registry.trim() || busy || uploadBusy}
+                onClick={() => onSubmitRegistry(registry.trim())}
+              >
+                {busy ? 'Importing…' : '⬇ Import'}
+              </button>
+            </div>
+          </div>
+
+          {/* 2) Folder / .zip upload — second: bring the whole thing in. */}
+          <div className="upload-divider">
+            <span>or upload all the files</span>
+          </div>
+
+          <div className="upload-row">
+            <span className="upload-label">
+              Got the whole thing? Upload a <strong>folder</strong> or <strong>.zip</strong> —
+              multi-file components (shadcn, etc.) just work:
+            </span>
+            <div className="upload-btns">
+              <label className={`btn btn-ghost btn-sm${uploadBusy || busy ? ' is-disabled' : ''}`}>
+                📁 Folder
+                <input
+                  ref={folderRef}
+                  type="file"
+                  hidden
+                  multiple
+                  disabled={uploadBusy || busy}
+                  onChange={(e) => {
+                    const l = e.target.files;
+                    if (l && l.length) void handleUpload(filesFromFileList(l));
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              <label className={`btn btn-ghost btn-sm${uploadBusy || busy ? ' is-disabled' : ''}`}>
+                🗜 .zip
+                <input
+                  type="file"
+                  hidden
+                  accept=".zip,application/zip,application/x-zip-compressed"
+                  disabled={uploadBusy || busy}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void handleUpload(filesFromZip(f));
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              {uploadBusy && <span className="upload-status">Reading files…</span>}
+            </div>
+            {uploadError && <div className="paste-warn">⚠ {uploadError}</div>}
+          </div>
+
+          {/* 3) Paste a single component — last; this is what the primary
+              "Add to vault" button in the footer submits. */}
+          <div className="upload-divider">
+            <span>or paste the code</span>
+          </div>
+
           <textarea
-            autoFocus
             spellCheck={false}
             placeholder={'Paste a React or HTML snippet…\n\nexport default function PrimaryButton() {\n  return <button className="btn">Click me</button>;\n}'}
             value={value}
@@ -79,7 +173,7 @@ export function PasteModal({
             previews inside a sandbox once it passes the gate. <br />
             <span style={{ opacity: 0.85 }}>
               Paste the component’s <strong>actual code</strong> here. If the site only gives an
-              install command (<code>npx shadcn add…</code>), use the <strong>CLI</strong> box below
+              install command (<code>npx shadcn add…</code>), use the <strong>CLI</strong> box above
               instead — we’ll fetch the source for you. The <code>cn</code> helper and{' '}
               <code>@/</code> imports are handled either way.
             </span>
@@ -147,96 +241,6 @@ export function PasteModal({
               ＋ Add a usage/demo example <span className="opt-tag">optional</span>
             </button>
           )}
-
-          {/* 2) CLI / registry install — common for shadcn-style ecosystems. */}
-          <div className="upload-divider">
-            <span>or paste a CLI command</span>
-          </div>
-
-          <div className="upload-row">
-            <span className="upload-label">
-              Got an <strong>install command</strong> instead of code? Paste it (shadcn, Magic UI,
-              Aceternity…) and we fetch the source for you:
-            </span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="text"
-                spellCheck={false}
-                placeholder="npx shadcn add @magicui/marquee"
-                value={registry}
-                disabled={busy || uploadBusy}
-                onChange={(e) => setRegistry(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && registry.trim() && !busy && !uploadBusy) {
-                    onSubmitRegistry(registry.trim());
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  padding: '8px 10px',
-                  borderRadius: 8,
-                  border: '1px solid var(--border, #2a2a35)',
-                  background: 'var(--input-bg, #14141b)',
-                  color: 'inherit',
-                  fontSize: 13,
-                  fontFamily: 'ui-monospace, monospace',
-                }}
-              />
-              <button
-                className="btn btn-ghost btn-sm"
-                disabled={!registry.trim() || busy || uploadBusy}
-                onClick={() => onSubmitRegistry(registry.trim())}
-              >
-                {busy ? 'Importing…' : '⬇ Import'}
-              </button>
-            </div>
-          </div>
-
-          {/* 3) Folder / .zip upload — least common (needs the files downloaded). */}
-          <div className="upload-divider">
-            <span>or upload all the files</span>
-          </div>
-
-          <div className="upload-row">
-            <span className="upload-label">
-              Got the whole thing? Upload a <strong>folder</strong> or <strong>.zip</strong> —
-              multi-file components (shadcn, etc.) just work:
-            </span>
-            <div className="upload-btns">
-              <label className={`btn btn-ghost btn-sm${uploadBusy || busy ? ' is-disabled' : ''}`}>
-                📁 Folder
-                <input
-                  ref={folderRef}
-                  type="file"
-                  hidden
-                  multiple
-                  disabled={uploadBusy || busy}
-                  onChange={(e) => {
-                    const l = e.target.files;
-                    if (l && l.length) void handleUpload(filesFromFileList(l));
-                    e.target.value = '';
-                  }}
-                />
-              </label>
-              <label className={`btn btn-ghost btn-sm${uploadBusy || busy ? ' is-disabled' : ''}`}>
-                🗜 .zip
-                <input
-                  type="file"
-                  hidden
-                  accept=".zip,application/zip,application/x-zip-compressed"
-                  disabled={uploadBusy || busy}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void handleUpload(filesFromZip(f));
-                    e.target.value = '';
-                  }}
-                />
-              </label>
-              {uploadBusy && <span className="upload-status">Reading files…</span>}
-            </div>
-            {uploadError && <div className="paste-warn">⚠ {uploadError}</div>}
-          </div>
 
           {error && (
             <p
