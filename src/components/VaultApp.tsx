@@ -291,9 +291,9 @@ export function VaultApp({
         <button
           className="btn"
           onClick={() => setMcpOpen(true)}
-          title="Connect your vault to an AI agent (Claude Code, Cursor, Windsurf) over MCP"
+          title="Connect your vault to an AI agent (Claude Code, Cursor, Windsurf, Hermes…) — generate MCP tokens here"
         >
-          🔌 Connect AI
+          🔌 Connect AI · MCP
         </button>
         {isPro && <span className="topbar-pro" title="You're on the Pro plan">✦ PRO</span>}
         <div className="usermenu">
@@ -355,6 +355,18 @@ export function VaultApp({
                     }}
                   >
                     ✦ Upgrade to Pro
+                  </button>
+                )}
+                {isPro && (
+                  <button
+                    className="menu-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setMcpOpen(true);
+                    }}
+                  >
+                    🔌 MCP tokens for agents
                   </button>
                 )}
                 <button className="menu-item" role="menuitem" onClick={() => signOut()}>
