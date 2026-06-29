@@ -30,8 +30,10 @@ export async function sendEmail(to: EmailRecipient, content: EmailContent): Prom
   }
   if (!to.email) return false;
 
+  // Send from the authenticated snapforgeui.com domain (DKIM/SPF verified in
+  // Brevo) for inbox deliverability. Override with BREVO_SENDER_EMAIL.
   const sender = {
-    email: env('BREVO_SENDER_EMAIL') || 'investing2188@gmail.com',
+    email: env('BREVO_SENDER_EMAIL') || 'hello@snapforgeui.com',
     name: env('BREVO_SENDER_NAME') || 'SnapForge UI',
   };
 
