@@ -73,7 +73,7 @@ const BLOCKED = ['eval()', 'new Function()', 'fetch / network', 'dangerouslySetI
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-block rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-violet-200/80">
+    <span className="inline-block rounded-full border border-white/20 bg-black/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-violet-100 backdrop-blur-sm [text-shadow:0_1px_8px_rgba(0,0,0,0.6)]">
       {children}
     </span>
   );
@@ -136,7 +136,7 @@ export function Landing() {
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <AnimatedButton label="Start your vault" onClick={startVault} />
-            <a href="#mcp" className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/85 transition hover:border-white/30 hover:bg-white/10">
+            <a href="#mcp" className="rounded-xl border border-white/25 bg-black/30 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition [text-shadow:0_1px_8px_rgba(0,0,0,0.6)] hover:border-white/40 hover:bg-black/45">
               Connect your AI →
             </a>
           </div>
