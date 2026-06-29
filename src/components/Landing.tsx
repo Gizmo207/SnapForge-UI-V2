@@ -2,7 +2,7 @@
 
 import { signIn } from 'next-auth/react';
 import AnimatedPattern from './landing/vault/AnimatedPattern';
-import CornerLight from './landing/vault/CornerLight';
+import SideRays from './landing/vault/SideRays';
 import { KineticText } from './landing/vault/KineticText';
 import AnimatedButton from './landing/vault/AnimatedButton';
 import GradientCard from './landing/vault/GradientCard';
@@ -165,8 +165,10 @@ export function Landing() {
 
       {/* ---------- HOW IT WORKS / 4 WAYS IN ---------- */}
       <section id="how" className="relative z-10 mx-auto max-w-6xl overflow-hidden px-6 py-28 text-center">
-        {/* Warm sunshine glow bleeding in from the top-left corner. */}
-        <CornerLight className="-left-32 -top-24" />
+        {/* Side Rays from the vault: volumetric WebGL light rays with shimmer/glare. */}
+        <div className="pointer-events-none absolute inset-0">
+          <SideRays origin="top-right" />
+        </div>
         <div className="relative z-10">
           <SectionLabel>Four ways in</SectionLabel>
           <h2 className="mx-auto mt-6 max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
