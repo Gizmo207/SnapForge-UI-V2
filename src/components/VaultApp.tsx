@@ -307,6 +307,34 @@ export function VaultApp({
                     <span className="menu-sub">{viewer.email}</span>
                   )}
                 </div>
+                <button
+                  className="menu-item"
+                  role="menuitem"
+                  onClick={async () => {
+                    const res = await fetch('/api/stripe/checkout', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ plan: 'pro', interval: 'month' }),
+                    });
+                    const body = await res.json().catch(() => ({}));
+                    if (body.url) window.location.href = body.url;
+                    else setError(body.detail || body.error || 'Could not start checkout');
+                  }}
+                >
+                  ✦ Upgrade to Pro
+                </button>
+                <button
+                  className="menu-item"
+                  role="menuitem"
+                  onClick={async () => {
+                    const res = await fetch('/api/stripe/portal', { method: 'POST' });
+                    const body = await res.json().catch(() => ({}));
+                    if (body.url) window.location.href = body.url;
+                    else setError(body.detail || body.error || 'No billing account yet');
+                  }}
+                >
+                  💳 Manage billing
+                </button>
                 <button className="menu-item" role="menuitem" onClick={() => signOut()}>
                   ⇥ Sign out
                 </button>

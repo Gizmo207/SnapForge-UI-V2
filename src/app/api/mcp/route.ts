@@ -3,6 +3,7 @@ import { dispatchMcp, type JsonRpcRequest, type ToolImpl } from '@/domains/mcp/p
 import { toSummary, toPayload, matchesQuery } from '@/domains/mcp/pure/shape';
 import { looksLikeApiToken } from '@/adapters/auth/apiToken';
 import { ownerForToken } from '@/adapters/supabase/tokenRepository';
+import { canOwnerUseMcp } from '@/adapters/billing/entitlement';
 import {
   listComponents,
   listComponentsByCategory,
@@ -67,6 +68,15 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { jsonrpc: '2.0', id: null, error: { code: -32001, message: 'Unauthorized: unknown token' } },
       { status: 401, headers: { 'WWW-Authenticate': 'Bearer' } },
+    );
+  }
+
+  // Pro-gated: a token stays valid in the table, but a lapsed/free plan loses
+  // access here, so downgrades take effect immediately.
+  if (!(await canOwnerUseMcp(ownerId))) {
+    return NextResponse.json(
+      { jsonrpc: '2.0', id: null, error: { code: -32003, message: 'Forbidden: MCP access requires a Pro plan' } },
+      { status: 402 },
     );
   }
 

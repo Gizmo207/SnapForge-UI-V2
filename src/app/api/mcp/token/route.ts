@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUserId } from '@/adapters/auth/session';
 import { createApiToken, listApiTokens, revokeApiToken } from '@/adapters/supabase/tokenRepository';
+import { canOwnerUseMcp } from '@/adapters/billing/entitlement';
 
 export const runtime = 'nodejs';
 
@@ -26,6 +27,13 @@ export async function GET() {
 export async function POST(request: Request) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  // MCP is a Pro feature — block token creation for non-entitled accounts.
+  if (!(await canOwnerUseMcp(userId))) {
+    return NextResponse.json(
+      { error: 'pro_required', detail: 'MCP access is a Pro feature. Upgrade to generate tokens.' },
+      { status: 402 },
+    );
+  }
   let label = 'MCP token';
   try {
     const body = (await request.json()) as { label?: unknown };

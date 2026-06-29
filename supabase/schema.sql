@@ -57,3 +57,17 @@ create index if not exists api_tokens_hash_idx on api_tokens (token_hash);
 -- Accessed only via the service role (bypasses RLS); enable RLS with no public
 -- policy so the table is never readable with the anon key.
 alter table api_tokens enable row level security;
+
+-- Billing: one row per owner tracking plan + Stripe identifiers. No row = free.
+-- Accessed via the service role; the MCP gate and checkout/portal read this.
+create table if not exists subscriptions (
+  owner_id                text primary key,
+  stripe_customer_id      text,
+  stripe_subscription_id  text,
+  plan                    text not null default 'free' check (plan in ('free','pro','team')),
+  status                  text,
+  current_period_end      timestamptz,
+  updated_at              timestamptz not null default now()
+);
+create index if not exists subscriptions_customer_idx on subscriptions (stripe_customer_id);
+alter table subscriptions enable row level security;
