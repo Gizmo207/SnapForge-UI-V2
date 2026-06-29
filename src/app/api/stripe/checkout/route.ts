@@ -26,6 +26,14 @@ export async function POST(request: Request) {
 
   const price = priceForSelection(plan, interval, priceIds());
   if (!price) {
+    console.error('[checkout] price_not_configured', {
+      plan,
+      interval,
+      hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
+      hasProMonthly: !!process.env.STRIPE_PRICE_PRO_MONTHLY,
+      hasProYearly: !!process.env.STRIPE_PRICE_PRO_YEARLY,
+      hasTeamMonthly: !!process.env.STRIPE_PRICE_TEAM_MONTHLY,
+    });
     return NextResponse.json({ error: 'price_not_configured' }, { status: 500 });
   }
 
@@ -57,6 +65,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ url: session.url });
   } catch (e) {
+    console.error('[checkout] checkout_failed:', (e as Error).message);
     return NextResponse.json({ error: 'checkout_failed', detail: (e as Error).message }, { status: 500 });
   }
 }
