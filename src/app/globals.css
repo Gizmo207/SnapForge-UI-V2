@@ -172,19 +172,24 @@ a { color: inherit; text-decoration: none; }
 
 /* The card is just the showcase + meta below it — no outer box/border. */
 .card {
-  position: relative; background: transparent; border: 0; transition: transform .16s ease;
+  position: relative; background: transparent; border: 0;
+  transition: transform .18s cubic-bezier(.22,.61,.36,1);
   break-inside: avoid; margin: 0 0 22px;
 }
 .card:hover { transform: translateY(-3px); }
 
 /* The showcase: a clean rounded rectangle, component perfectly centered.
-   Height is set inline per component kind (see showcaseHeight). */
+   Height is set inline per component kind (see showcaseHeight).
+   A constant soft shadow (not animated) keeps hover smooth — animating
+   box-shadow forces a per-frame repaint behind the live preview iframe, so we
+   only transition the GPU-cheap border-color and lift the card via transform. */
 .showcase {
   position: relative; height: 224px; border-radius: 16px; overflow: hidden;
   border: 1px solid var(--border); display: grid; place-items: center;
-  transition: border-color .16s ease, box-shadow .16s ease;
+  box-shadow: 0 12px 30px -22px rgba(0,0,0,.85);
+  transition: border-color .16s ease;
 }
-.card:hover .showcase { border-color: var(--border-2); box-shadow: 0 22px 48px -26px rgba(0,0,0,.9); }
+.card:hover .showcase { border-color: var(--border-2); }
 .card.selected .showcase { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
 .showcase iframe { border: 0; width: 100%; height: 100%; background: transparent; }
