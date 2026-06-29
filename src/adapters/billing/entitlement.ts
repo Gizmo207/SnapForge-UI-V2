@@ -8,9 +8,12 @@ import { canUseMcp, parseFounders } from '../../domains/billing/pure/plan';
  * comped accounts keep access without paying).
  */
 export async function canOwnerUseMcp(ownerId: string): Promise<boolean> {
-  const enforced = process.env.BILLING_ENFORCED === 'true';
-  if (!enforced) return true; // not enforcing yet: everyone keeps current access
+  // MCP is Pro-only by default. Set BILLING_ENFORCED=false to reopen it to all.
+  // (.trim() guards against trailing whitespace from shell-set env values.)
+  const enforced = process.env.BILLING_ENFORCED?.trim() !== 'false';
+  if (!enforced) return true;
 
+  // Founders (us / comped accounts) always pass, even if billing/DB is unreachable.
   const isFounder = parseFounders(process.env.FOUNDER_OWNER_IDS).has(ownerId);
   if (isFounder) return true;
 
