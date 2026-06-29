@@ -43,12 +43,13 @@ export type PriceIds = {
   proMonthly?: string;
   proYearly?: string;
   teamMonthly?: string;
+  teamYearly?: string;
 };
 
 /** Map a Stripe price id back to the plan it represents (for the webhook). */
 export function planForPrice(priceId: string | null | undefined, prices: PriceIds): Plan {
   if (!priceId) return 'free';
-  if (priceId === prices.teamMonthly) return 'team';
+  if (priceId === prices.teamMonthly || priceId === prices.teamYearly) return 'team';
   if (priceId === prices.proMonthly || priceId === prices.proYearly) return 'pro';
   return 'free';
 }
@@ -59,7 +60,9 @@ export function priceForSelection(
   interval: 'month' | 'year',
   prices: PriceIds,
 ): string | null {
-  if (plan === 'team') return prices.teamMonthly ?? null;
+  if (plan === 'team') {
+    return (interval === 'year' ? prices.teamYearly : prices.teamMonthly) ?? null;
+  }
   return (interval === 'year' ? prices.proYearly : prices.proMonthly) ?? null;
 }
 
