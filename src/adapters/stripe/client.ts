@@ -16,12 +16,29 @@ export function getStripe(): Stripe {
   return new Stripe(key);
 }
 
-/** The configured Stripe price ids for each plan/interval. */
+// Known-good test-mode price ids, baked in so the integration works even when
+// the env vars get corrupted by a shell pipe. Price ids are NOT secret. To move
+// to live mode, set clean STRIPE_PRICE_* env vars with the live ids — a valid
+// `price_…` env value overrides these.
+const FALLBACK_PRICES = {
+  proMonthly: 'price_1TnVJO3cBUuvZDG4ipgomdgk',
+  proYearly: 'price_1TnVJP3cBUuvZDG4dKDig228',
+  teamMonthly: 'price_1TnVJP3cBUuvZDG48C5tzbkn',
+} as const;
+
+/** Trust an env price id only if it's a clean `price_…` value; otherwise fall
+ * back to the baked-in id (a corrupted/garbled env value is ignored). */
+function priceFromEnv(name: string, fallback: string): string {
+  const v = env(name);
+  return v && /^price_[A-Za-z0-9]+$/.test(v) ? v : fallback;
+}
+
+/** The Stripe price ids for each plan/interval. */
 export function priceIds(): PriceIds {
   return {
-    proMonthly: env('STRIPE_PRICE_PRO_MONTHLY'),
-    proYearly: env('STRIPE_PRICE_PRO_YEARLY'),
-    teamMonthly: env('STRIPE_PRICE_TEAM_MONTHLY'),
+    proMonthly: priceFromEnv('STRIPE_PRICE_PRO_MONTHLY', FALLBACK_PRICES.proMonthly),
+    proYearly: priceFromEnv('STRIPE_PRICE_PRO_YEARLY', FALLBACK_PRICES.proYearly),
+    teamMonthly: priceFromEnv('STRIPE_PRICE_TEAM_MONTHLY', FALLBACK_PRICES.teamMonthly),
   };
 }
 
