@@ -16,7 +16,7 @@ import GlassSurface from './landing/vault/GlassSurface';
 import TwoPiWave from './landing/vault/TwoPiWave';
 import LightfallNeon from './landing/vault/LightfallNeon';
 
-const PROD_URL = 'https://snap-forge-ui-v2.vercel.app';
+const PROD_URL = 'https://www.snapforgeui.com';
 
 /* The four ways a component gets into your vault — rendered as Gradient Cards */
 const INGEST = [
@@ -406,7 +406,11 @@ export function Landing() {
         </div>
         <footer className="relative z-10 mx-auto mt-32 flex max-w-6xl flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-sm text-white/55 sm:flex-row">
           <span>© {new Date().getFullYear()} SnapForge UI</span>
-          <span className="font-mono">Built entirely from vault components ✦</span>
+          <div className="flex items-center gap-5">
+            <a href="/privacy" className="transition hover:text-white/80">Privacy</a>
+            <a href="/terms" className="transition hover:text-white/80">Terms</a>
+            <span className="font-mono">Built from vault components ✦</span>
+          </div>
         </footer>
       </section>
     </div>
